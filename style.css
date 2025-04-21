@@ -606,9 +606,11 @@ button {
   }
 
   .sidebar {
-    position: absolute;
+    position: fixed;
     left: -280px;
     height: 100%;
+    z-index: 1000;
+    transition: var(--transition);
   }
 
   .sidebar.show {
@@ -617,12 +619,23 @@ button {
 
   .sidebar-toggle {
     display: block;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1100;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 50%;
+    box-shadow: var(--shadow);
   }
 
   .dashboard-panel {
-    position: absolute;
+    position: fixed;
     right: -320px;
     height: 100%;
+    z-index: 1000;
+    transition: var(--transition);
   }
 
   .dashboard-panel.show {
@@ -631,6 +644,15 @@ button {
 
   .dashboard-toggle {
     display: block;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1100;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 50%;
+    box-shadow: var(--shadow);
   }
 
   .main-header {
@@ -668,6 +690,26 @@ button {
   .modal-content {
     width: 95%;
   }
+
+  .sidebar {
+    width: 100%;
+    left: -100%;
+    height: auto;
+    bottom: 0;
+    top: auto;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .sidebar.show {
+    left: 0;
+  }
+
+  .sidebar-toggle {
+    bottom: 1rem;
+    top: auto;
+    left: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -690,5 +732,25 @@ button {
   .task-description {
     font-size: 0.8rem;
     -webkit-line-clamp: 1;
+  }
+
+  .sidebar {
+    width: 100%;
+    left: -100%;
+    height: auto;
+    bottom: 0;
+    top: auto;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .sidebar.show {
+    left: 0;
+  }
+
+  .sidebar-toggle {
+    bottom: 1rem;
+    top: auto;
+    left: 1rem;
   }
 }
