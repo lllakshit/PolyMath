@@ -259,10 +259,14 @@ small {
 .task .task-meta {
   font-size: 0.8em;
   margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px 12px;
 }
 .task .task-actions {
   margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 } /* More gap */
 .task .task-actions .btn {
@@ -324,6 +328,11 @@ small {
   flex-shrink: 0;
 }
 .scheduler-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   padding-bottom: 15px;
   border-bottom: 1px solid #eee;
   margin-bottom: 15px;
@@ -345,6 +354,8 @@ small {
 } /* More gap */
 .dashboard-item {
   padding: 18px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
 } /* More padding */
 .dashboard-item h3 {
   font-size: 1.2em;
@@ -359,20 +370,43 @@ small {
 }
 #generated-summary-output {
   max-height: 180px;
+  overflow-y: auto;
+  background-color: #f1f3f5;
+  padding: 10px;
+  border-radius: 6px;
+  margin-top: 10px;
 }
 .export-buttons {
   margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 /* Progress Bars */
+.progress-bar-container {
+  margin-bottom: 10px;
+}
+.progress-bar-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.9em;
+}
 .progress-bar {
   height: 20px;
   border-radius: 10px;
+  background-color: #e9ecef;
+  overflow: hidden;
 }
 .progress-bar-fill {
+  height: 100%;
+  background-color: #4a90e2;
   border-radius: 10px;
   line-height: 20px;
   font-size: 0.85em;
+  color: white;
+  text-align: center;
+  transition: width 0.3s ease;
 }
 
 /* ======================================== */
@@ -394,26 +428,58 @@ small {
   padding: 24px;
   max-width: 550px;
   max-height: 92vh;
+  overflow-y: auto;
+  position: relative;
 }
 .close-btn {
+  position: absolute;
   top: 12px;
   right: 18px;
+  font-size: 24px;
+  cursor: pointer;
+}
+.close-btn:hover {
+  color: #4a90e2;
 }
 
 .priority-matrix {
+  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 10px 0;
 }
 .priority-matrix label {
   font-size: 0.9em;
   padding: 5px 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 } /* Add padding */
 
+.modal-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+#task-history-view {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e4e7eb;
+}
 #task-history-items {
   max-height: 200px;
+  overflow-y: auto;
+  list-style: none;
+  margin-top: 10px;
 }
 #task-history-items li {
   padding: 8px 12px;
   font-size: 0.9em;
+  background-color: #f8f9fa;
+  margin-bottom: 5px;
+  border-radius: 4px;
 }
 
 /* ======================================== */
@@ -457,16 +523,18 @@ small {
     overflow: hidden; /* Container doesn't scroll */
   }
 
+  /* Mobile sidebar - collapsible with toggle */
   .sidebar {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #e4e7eb;
     /* Define a portion of the screen height, allow scroll */
     height: auto;
-    max-height: 40vh; /* Adjust as needed (40-50% is usually reasonable) */
+    max-height: 35vh; /* Reduced from 40vh to give more space to main content */
     overflow-y: auto; /* Scroll content WITHIN sidebar */
     flex-shrink: 0;
     padding: 12px 15px; /* Reduced padding */
+    z-index: 10; /* Ensure sidebar is above other content */
   }
   .sidebar h2 {
     font-size: 1.3em;
@@ -477,9 +545,16 @@ small {
     margin-top: 15px;
     margin-bottom: 8px;
   }
+  .sidebar ul {
+    margin-bottom: 10px;
+  }
   .sidebar li {
     padding: 8px 10px;
     margin-bottom: 4px;
+    /* Improve touch targets */
+    min-height: 44px;
+    display: flex;
+    align-items: center;
   }
   .sidebar #create-task-btn {
     margin: 8px 0 15px 0;
@@ -494,33 +569,72 @@ small {
     flex-grow: 1; /* Take remaining vertical space */
     overflow-y: auto; /* CRITICAL: Scroll main content */
     min-height: 0; /* CRITICAL: Flexbox fix for scrolling */
-    padding: 15px; /* Mobile padding */
-    gap: 18px; /* Reduced gap */
+    padding: 12px; /* Reduced mobile padding */
+    gap: 15px; /* Reduced gap */
     width: 100%;
   }
 
   .card {
     padding: 15px;
     border-radius: 8px;
+    /* Ensure cards don't overflow on small screens */
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
+  /* Scheduler controls - stack vertically on mobile */
   .scheduler-controls {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+  .scheduler-controls h2 {
+    text-align: center;
+    margin: 8px 0;
   }
   .scheduler-controls .btn {
     width: 100%;
+    margin: 2px 0;
+    min-height: 44px; /* Better touch target */
     font-size: 0.9em;
   }
   #current-date-display {
-    font-size: 1.25em;
-    margin: 12px 0;
+    font-size: 1.2em;
+    margin: 8px 0;
+    text-align: center;
+  }
+
+  /* Improved navigation buttons layout */
+  .scheduler-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "date date"
+      "prev next"
+      "today today";
+    gap: 8px;
+  }
+  #current-date-display {
+    grid-area: date;
+  }
+  #prev-day-btn {
+    grid-area: prev;
+  }
+  #next-day-btn {
+    grid-area: next;
+  }
+  #today-btn {
+    grid-area: today;
   }
 
   .timeline,
   .task-list {
-    padding: 12px;
-    min-height: 100px;
+    padding: 10px;
+    min-height: 80px; /* Reduced min-height */
   }
 
   .task {
@@ -530,21 +644,27 @@ small {
   } /* Adjusted padding */
   .task h4 {
     font-size: 1em;
+    word-break: break-word; /* Prevent overflow */
   }
   .task p {
     font-size: 0.85em;
+    word-break: break-word; /* Prevent overflow */
   }
   .task .task-meta {
     font-size: 0.75em;
+    flex-direction: column;
+    gap: 4px;
   }
   .task .task-actions {
     margin-top: 10px;
     gap: 8px;
+    justify-content: space-between;
   }
   .task .task-actions .btn {
-    padding: 4px 8px;
+    flex: 1;
+    padding: 8px;
     font-size: 0.8em;
-    min-height: 28px;
+    min-height: 40px; /* Increased for better touch */
   }
   .task::before {
     left: 8px;
@@ -553,11 +673,13 @@ small {
     height: 10px;
   } /* Ensure dot visible */
 
+  /* Improved modal for mobile */
   .modal-content {
-    width: 96%;
+    width: 95%;
     margin: 2vh auto;
     max-height: 96vh;
-    padding: 18px;
+    padding: 15px;
+    border-radius: 8px;
   } /* Fill more screen */
   .close-btn {
     top: 8px;
@@ -566,29 +688,194 @@ small {
   }
   .priority-matrix {
     grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .priority-matrix label {
+    padding: 8px 5px;
+    min-height: 44px; /* Better touch target */
+  }
+  .modal-buttons {
+    flex-direction: column;
+    gap: 8px;
   }
   .modal-buttons .btn {
-    font-size: 0.9em;
-    padding: 10px 15px;
+    width: 100%;
+    min-height: 44px; /* Better touch target */
+    font-size: 0.95em;
   }
 
+  /* Dashboard improvements for mobile */
   .dashboard-grid {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 15px;
   }
   .dashboard-item {
-    padding: 15px;
+    padding: 12px;
   }
   .dashboard-item h3 {
-    font-size: 1.15em;
+    font-size: 1.1em;
+    margin-bottom: 10px;
   }
   .chart-container {
-    min-height: 240px;
-    height: 300px;
-    max-height: 40vh;
+    min-height: 220px;
+    height: 260px;
+    max-height: 35vh;
   } /* Adjust chart size */
 
-  .export-buttons .btn {
+  /* Improved progress bars for mobile */
+  .progress-bar-container {
+    margin-bottom: 8px;
+  }
+  .progress-bar {
+    height: 18px;
+  }
+  .progress-bar-fill {
+    line-height: 18px;
+    font-size: 0.8em;
+  }
+
+  /* Weekly summary section improvements */
+  .weekly-summary textarea {
+    min-height: 60px;
+  }
+  .weekly-summary label {
+    margin-top: 8px;
+  }
+  #generated-summary-output {
+    max-height: 150px;
     font-size: 0.9em;
+  }
+
+  /* Export buttons */
+  .export-buttons {
+    margin-top: 15px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .export-buttons .btn {
+    width: 100%;
+    min-height: 44px; /* Better touch target */
+    font-size: 0.9em;
+  }
+
+  /* Task history improvements */
+  #task-history-items {
+    max-height: 150px;
+  }
+  #task-history-items li {
+    padding: 8px;
+    font-size: 0.85em;
+  }
+}
+
+/* ======================================== */
+/* SMALL MOBILE STYLES (max-width: 480px) */
+/* ======================================== */
+@media (max-width: 480px) {
+  html,
+  body {
+    font-size: 14px; /* Even smaller base font size */
+  }
+
+  .sidebar {
+    max-height: 30vh; /* Even smaller sidebar */
+    padding: 10px;
+  }
+
+  .main-content {
+    padding: 10px;
+    gap: 12px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  /* Further simplify task cards */
+  .task {
+    padding: 10px 10px 10px 25px;
+  }
+  .task .task-meta {
+    margin-top: 8px;
+  }
+  .task .task-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .task .task-actions .btn {
+    width: 100%;
+  }
+
+  /* Simplify scheduler controls */
+  #current-date-display {
+    font-size: 1.1em;
+  }
+
+  /* Simplify modal */
+  .modal-content {
+    padding: 12px;
+  }
+  .close-btn {
+    top: 5px;
+    right: 10px;
+  }
+
+  /* Simplify dashboard */
+  .dashboard-item {
+    padding: 10px;
+  }
+  .chart-container {
+    min-height: 200px;
+    height: 240px;
+  }
+}
+
+/* ======================================== */
+/* LANDSCAPE MODE IMPROVEMENTS */
+/* ======================================== */
+@media (max-width: 768px) and (orientation: landscape) {
+  .app-container {
+    flex-direction: row; /* Switch back to horizontal layout */
+  }
+
+  .sidebar {
+    width: 30%; /* Take 30% of width */
+    max-height: 100vh; /* Full height */
+    height: 100%;
+    border-right: 1px solid #e4e7eb;
+    border-bottom: none;
+  }
+
+  .main-content {
+    width: 70%; /* Take 70% of width */
+  }
+
+  /* Adjust scheduler controls for landscape */
+  .scheduler-controls {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  #current-date-display {
+    order: 1;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  #prev-day-btn {
+    order: 2;
+    width: auto;
+    flex: 1;
+  }
+  #next-day-btn {
+    order: 3;
+    width: auto;
+    flex: 1;
+  }
+  #today-btn {
+    order: 4;
+    width: auto;
+    flex: 1;
   }
 }
