@@ -1,0 +1,576 @@
+/* Basic Reset & Defaults */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%; /* Ensure body takes full height */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  line-height: 1.6;
+  background-color: #f4f7f9;
+  color: #333;
+}
+
+/* Layout */
+.app-container {
+  display: flex;
+  min-height: 100vh; /* Use min-height for full page */
+  width: 100%; /* Ensure container takes full width */
+}
+
+.sidebar {
+  width: 280px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* Allow scrolling if content overflows */
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Space between sections */
+}
+
+/* Card Style */
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+/* Sidebar Styles */
+.sidebar h2 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+  font-size: 1.4em;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 5px;
+}
+.sidebar h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 1.1em;
+  color: #34495e;
+}
+.sidebar ul {
+  list-style: none;
+  margin-bottom: 20px;
+}
+.sidebar li {
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sidebar li:hover {
+  background-color: #ecf0f1;
+}
+.sidebar li i {
+  color: #7f8c8d;
+}
+.sidebar #create-task-btn {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.sidebar-section {
+  margin-top: auto; /* Push history/unscheduled to bottom if space allows */
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none; /* For potential future <a> buttons */
+  color: #333;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+}
+.btn:hover {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: #e8e8e8;
+}
+.btn-primary {
+  background-color: #3498db;
+  color: white;
+  border-color: #2980b9;
+}
+.btn-primary:hover {
+  background-color: #2980b9;
+}
+.btn-danger {
+  background-color: #e74c3c;
+  color: white;
+  border-color: #c0392b;
+}
+.btn-danger:hover {
+  background-color: #c0392b;
+}
+
+/* Scheduler View */
+.scheduler-view h2,
+.scheduler-view h3 {
+  text-align: center;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+.scheduler-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+  gap: 10px;
+}
+#current-date-display {
+  font-weight: bold;
+  font-size: 1.3em;
+}
+
+/* Timeline & Task Lists */
+.timeline,
+.task-list {
+  min-height: 150px;
+  border: 1px dashed #bdc3c7;
+  border-radius: 5px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  margin-top: 10px; /* Add some space */
+}
+#unscheduled-tasks-list {
+  background-color: #fdfefe;
+}
+
+/* Task Items */
+.task {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  cursor: grab;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+  position: relative; /* For absolute positioned elements like priority */
+}
+.task:active {
+  cursor: grabbing;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.task.dragging {
+  opacity: 0.6;
+  border: 1px dashed #3498db;
+}
+.task h4 {
+  margin-bottom: 5px;
+  font-size: 1.1em;
+}
+.task p {
+  font-size: 0.9em;
+  color: #555;
+  margin-bottom: 3px;
+  white-space: pre-wrap; /* Respect newlines in description */
+  word-break: break-word; /* Prevent long words from overflowing */
+}
+.task .task-meta {
+  font-size: 0.8em;
+  color: #777;
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap; /* Wrap meta info if needed */
+  gap: 5px;
+}
+.task .task-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 5px;
+}
+.task .task-actions .btn {
+  padding: 3px 6px;
+  font-size: 0.8em;
+}
+.task.overdue {
+  border-left: 5px solid #e74c3c; /* Red border for overdue */
+  background-color: #fdecea;
+}
+
+/* Priority Indicators */
+.task::before {
+  /* Using ::before for priority dot */
+  content: "";
+  position: absolute;
+  left: -12px; /* Position outside the padding */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #bdc3c7; /* Default (e.g., not urgent/not important) */
+}
+.task.priority-urgent-important::before {
+  background-color: #e74c3c;
+} /* Red */
+.task.priority-not-urgent-important::before {
+  background-color: #f1c40f;
+} /* Yellow */
+.task.priority-urgent-not-important::before {
+  background-color: #3498db;
+} /* Blue */
+.task.priority-not-urgent-not-important::before {
+  background-color: #95a5a6;
+} /* Gray */
+
+/* Drop Zone Hover Effect */
+.drop-zone.drag-over {
+  background-color: #eafaf1;
+  border: 2px dashed #2ecc71;
+}
+
+/* Modal Styles */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5); /* Dim background */
+  animation: fadeIn 0.3s ease;
+}
+.modal-content {
+  position: relative;
+  margin: 5% auto; /* Centered vertically for larger screens */
+  padding: 30px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh; /* Limit height and allow scrolling */
+  overflow-y: auto;
+}
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.close-btn:hover,
+.close-btn:focus {
+  color: black;
+  text-decoration: none;
+}
+#task-form label {
+  display: block;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+#task-form input[type="text"],
+#task-form input[type="number"],
+#task-form input[type="date"],
+#task-form select,
+#task-form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1em;
+}
+#task-form textarea {
+  resize: vertical; /* Allow vertical resize only */
+}
+#task-form small {
+  font-size: 0.85em;
+  color: #777;
+  display: block;
+  margin-top: -3px;
+  margin-bottom: 10px;
+}
+.priority-matrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 15px;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #eee;
+}
+.priority-matrix label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: normal;
+}
+.priority-matrix input[type="radio"] {
+  width: auto; /* Override default width */
+}
+.modal-buttons {
+  margin-top: 25px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap; /* Wrap buttons if needed */
+}
+#task-history-view {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+#task-history-view h3 {
+  margin-bottom: 10px;
+}
+#task-history-items {
+  list-style-type: disc;
+  padding-left: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+#task-history-items li {
+  font-size: 0.9em;
+  margin-bottom: 5px;
+  color: #555;
+}
+#task-history-items strong {
+  color: #333;
+}
+
+/* Dashboard Styles */
+.dashboard-view h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+.dashboard-item {
+  background-color: #fdfefe;
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column; /* Ensure content stacks vertically */
+}
+.dashboard-item h3 {
+  margin-bottom: 10px;
+  color: #34495e;
+  font-size: 1.2em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+.dashboard-item ul {
+  list-style: none;
+  padding-left: 5px;
+}
+.dashboard-item li {
+  margin-bottom: 5px;
+  font-size: 0.95em;
+}
+.dashboard-item li strong {
+  color: #2c3e50;
+}
+#time-per-subject li span {
+  font-weight: bold;
+}
+.chart-container {
+  position: relative;
+  min-height: 250px; /* Ensure space for the chart */
+}
+#focus-chart {
+  max-width: 100%; /* Ensure chart resizes */
+  max-height: 300px; /* Limit chart height */
+}
+.weekly-summary label {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 3px;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+.weekly-summary textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95em;
+  resize: vertical;
+}
+.weekly-summary button {
+  margin-top: 10px;
+}
+#generated-summary-output {
+  margin-top: 15px;
+  background-color: #f0f0f0;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  white-space: pre-wrap;
+  border: 1px solid #ddd;
+}
+.export-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+  flex-wrap: wrap; /* Wrap buttons if needed */
+}
+
+/* Progress Bars (Optional) */
+.progress-bar-container {
+  margin-bottom: 8px;
+}
+.progress-bar-label {
+  display: block;
+  font-size: 0.9em;
+  margin-bottom: 3px;
+}
+.progress-bar {
+  width: 100%;
+  height: 15px;
+  background-color: #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background-color: #3498db;
+  border-radius: 8px 0 0 8px; /* Keep rounded corners */
+  transition: width 0.5s ease-out;
+  text-align: right;
+  color: white;
+  font-size: 0.8em;
+  line-height: 15px;
+  padding-right: 5px;
+}
+
+/* Task History List in Sidebar */
+#task-history-list .task {
+  cursor: default; /* Not draggable */
+  background-color: #f9f9f9;
+  opacity: 0.8;
+  border-left: 3px solid #bdc3c7; /* Indicate history */
+}
+#task-history-list .task::before {
+  display: none; /* Hide priority dot for history */
+}
+#task-history-list .task .task-actions {
+  display: none; /* Hide actions for history items */
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.modal-content {
+  animation: slideIn 0.3s ease forwards;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(250px, 1fr)
+    ); /* Adjust grid for tablets */
+  }
+  .sidebar {
+    width: 240px; /* Slightly smaller sidebar */
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column; /* Stack sidebar and main content */
+    height: auto; /* Allow content to determine height */
+    min-height: 100vh;
+  }
+  .sidebar {
+    width: 100%; /* Full width */
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    height: auto; /* Adjust height */
+    max-height: 40vh; /* Limit initial height, allow scrolling */
+    overflow-y: auto;
+  }
+  .main-content {
+    padding: 15px; /* Reduce padding */
+  }
+  .scheduler-controls {
+    flex-direction: column; /* Stack controls vertically */
+    align-items: stretch; /* Make buttons full width */
+  }
+  #current-date-display {
+    text-align: center;
+    margin: 10px 0;
+  }
+  .modal-content {
+    width: 95%;
+    margin: 10% auto; /* Adjust margin for smaller screens */
+    padding: 20px;
+  }
+  .priority-matrix {
+    grid-template-columns: 1fr; /* Stack priority options */
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr; /* Single column layout */
+  }
+  .export-buttons,
+  .modal-buttons {
+    justify-content: center; /* Center buttons */
+  }
+  .task::before {
+    left: 5px; /* Adjust priority dot position */
+  }
+  .task {
+    padding-left: 20px; /* Make space for the dot */
+  }
+}

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learning Task Scheduler</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon" />
+  </head>
+  <body>
+    <div class="app-container">
+      <aside class="sidebar">
+        <h2>Disciplines</h2>
+        <ul id="discipline-list">
+          <li data-category="AI/ML">AI/ML <i class="fas fa-brain"></i></li>
+          <li data-category="Quantum Computing">
+            Quantum Computing <i class="fas fa-atom"></i>
+          </li>
+          <li data-category="Physics">Physics <i class="fas fa-flask"></i></li>
+          <li data-category="Math">Math <i class="fas fa-calculator"></i></li>
+          <li data-category="Content Creation">
+            Content Creation <i class="fas fa-pen-fancy"></i>
+          </li>
+          <li data-category="Freelancing">
+            Freelancing <i class="fas fa-briefcase"></i>
+          </li>
+        </ul>
+        <button id="create-task-btn" class="btn btn-primary">
+          <i class="fas fa-plus"></i> Create New Task
+        </button>
+        <div class="sidebar-section">
+          <h3>Unscheduled Tasks</h3>
+          <div
+            id="unscheduled-tasks-list"
+            class="task-list drop-zone"
+            data-date="unscheduled"
+          ></div>
+        </div>
+        <div class="sidebar-section">
+          <h3>Task History (Latest)</h3>
+          <div id="task-history-list" class="task-list"></div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <section id="scheduler" class="scheduler-view card">
+          <div class="scheduler-controls">
+            <button id="prev-day-btn" class="btn">
+              <i class="fas fa-chevron-left"></i> Prev Day
+            </button>
+            <h2 id="current-date-display"></h2>
+            <button id="next-day-btn" class="btn">
+              Next Day <i class="fas fa-chevron-right"></i>
+            </button>
+            <button id="today-btn" class="btn">Today</button>
+          </div>
+          <div id="timeline-container" class="timeline drop-zone">
+            <h3>Scheduled Tasks for <span id="timeline-date"></span></h3>
+            <div id="scheduled-tasks-list" class="task-list"></div>
+          </div>
+        </section>
+
+        <section id="dashboard" class="dashboard-view card">
+          <h2>Dashboard</h2>
+          <div class="dashboard-grid">
+            <div class="dashboard-item">
+              <h3>Time Spent per Subject (Est.)</h3>
+              <ul id="time-per-subject"></ul>
+              <div id="subject-progress-bars"></div>
+            </div>
+            <div class="dashboard-item chart-container">
+              <h3>Focus Quality Distribution</h3>
+              <canvas id="focus-chart"></canvas>
+            </div>
+            <div class="dashboard-item">
+              <h3>Upcoming Tasks (Next 7 Days)</h3>
+              <ul id="upcoming-tasks"></ul>
+            </div>
+            <div class="dashboard-item weekly-summary">
+              <h3>Weekly Summary Generator</h3>
+              <div>
+                <label for="summary-well">What went well?</label>
+                <textarea id="summary-well" rows="3"></textarea>
+              </div>
+              <div>
+                <label for="summary-blockers">Blockers?</label>
+                <textarea id="summary-blockers" rows="3"></textarea>
+              </div>
+              <div>
+                <label for="summary-next">Next steps?</label>
+                <textarea id="summary-next" rows="3"></textarea>
+              </div>
+              <button id="generate-summary-btn" class="btn">
+                Generate Text Summary
+              </button>
+              <pre id="generated-summary-output"></pre>
+            </div>
+          </div>
+          <div class="export-buttons">
+            <button id="export-json-btn" class="btn">
+              <i class="fas fa-file-code"></i> Export All to JSON
+            </button>
+            <button id="export-csv-btn" class="btn">
+              <i class="fas fa-file-csv"></i> Export All to CSV
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="task-modal" class="modal">
+      <div class="modal-content card">
+        <span class="close-btn">&times;</span>
+        <h2 id="modal-title">Create New Task</h2>
+        <form id="task-form">
+          <input type="hidden" id="task-id" />
+          <input type="hidden" id="task-history-id" />
+          <label for="task-title">Title:</label>
+          <input type="text" id="task-title" required />
+
+          <label for="task-category">Subject/Category:</label>
+          <select id="task-category" required>
+            <option value="">-- Select Category --</option>
+            <option value="AI/ML">AI/ML</option>
+            <option value="Quantum Computing">Quantum Computing</option>
+            <option value="Physics">Physics</option>
+            <option value="Math">Math</option>
+            <option value="Content Creation">Content Creation</option>
+            <option value="Freelancing">Freelancing</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <label for="task-description">Description/Notes:</label>
+          <textarea id="task-description" rows="3"></textarea>
+
+          <label for="task-est-time">Estimated Time (minutes):</label>
+          <input type="number" id="task-est-time" min="5" step="5" />
+
+          <label for="task-scheduled-date">Scheduled Date:</label>
+          <input type="date" id="task-scheduled-date" />
+          <small>Leave blank for unscheduled</small>
+
+          <label>Priority (Eisenhower Matrix):</label>
+          <div class="priority-matrix">
+            <label
+              ><input
+                type="radio"
+                name="priority"
+                value="urgent-important"
+                required
+              />
+              Urgent & Important</label
+            >
+            <label
+              ><input
+                type="radio"
+                name="priority"
+                value="not-urgent-important"
+              />
+              Not Urgent & Important</label
+            >
+            <label
+              ><input
+                type="radio"
+                name="priority"
+                value="urgent-not-important"
+              />
+              Urgent & Not Important</label
+            >
+            <label
+              ><input
+                type="radio"
+                name="priority"
+                value="not-urgent-not-important"
+              />
+              Not Urgent & Not Important</label
+            >
+          </div>
+
+          <label for="task-focus">Focus Level Required:</label>
+          <select id="task-focus" required>
+            <option value="">-- Select Focus --</option>
+            <option value="deep">Deep Work (High)</option>
+            <option value="medium">Focused Work (Medium)</option>
+            <option value="shallow">Shallow Work (Low)</option>
+          </select>
+
+          <div class="modal-buttons">
+            <button type="submit" id="save-task-btn" class="btn btn-primary">
+              Save Task
+            </button>
+            <button
+              type="button"
+              id="delete-task-btn"
+              class="btn btn-danger"
+              style="display: none"
+            >
+              Delete Task
+            </button>
+            <button type="button" class="cancel-btn btn">Cancel</button>
+          </div>
+        </form>
+        <div id="task-history-view" style="display: none">
+          <h3>Task Edit History</h3>
+          <ul id="task-history-items"></ul>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
