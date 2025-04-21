@@ -633,9 +633,15 @@ button {
   .dashboard-panel {
     position: fixed;
     right: -320px;
+    top: 0;
     height: 100%;
     z-index: 1000;
     transition: var(--transition);
+    overflow-y: auto; /* Ensure scrolling within the panel */
+    background-color: var(
+      --sidebar-bg
+    ); /* Add background for better visibility */
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); /* Add shadow for separation */
   }
 
   .dashboard-panel.show {
@@ -710,6 +716,26 @@ button {
     top: auto;
     left: 1rem;
   }
+
+  .dashboard-panel {
+    width: 100%;
+    right: -100%;
+    height: auto;
+    bottom: 0;
+    top: auto;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .dashboard-panel.show {
+    right: 0;
+  }
+
+  .dashboard-toggle {
+    bottom: 1rem;
+    top: auto;
+    right: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -752,5 +778,25 @@ button {
     bottom: 1rem;
     top: auto;
     left: 1rem;
+  }
+
+  .dashboard-panel {
+    width: 100%;
+    right: -100%;
+    height: auto;
+    bottom: 0;
+    top: auto;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .dashboard-panel.show {
+    right: 0;
+  }
+
+  .dashboard-toggle {
+    bottom: 1rem;
+    top: auto;
+    right: 1rem;
   }
 }
