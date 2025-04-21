@@ -5,21 +5,25 @@
   padding: 0;
 }
 
-html,
-body {
-  height: 100%; /* Ensure body takes full height */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+html, body {
+  /* Ensure html and body cover full height */
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.6;
   background-color: #f4f7f9;
   color: #333;
+  /* Prevent common horizontal overflow issues */
+  overflow-x: hidden;
 }
 
 /* Layout */
 .app-container {
   display: flex;
-  min-height: 100vh; /* Use min-height for full page */
-  width: 100%; /* Ensure container takes full width */
+  /* Use 100% height of body */
+  height: 100%;
+  width: 100%;
+  /* Prevent the container itself from scrolling; let children scroll */
+  overflow: hidden;
 }
 
 .sidebar {
@@ -29,16 +33,22 @@ body {
   border-right: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* Allow scrolling if content overflows */
+  /* Allow sidebar scrolling on desktop if needed */
+  overflow-y: auto;
+  /* Prevent sidebar from shrinking unexpectedly on desktop */
+  flex-shrink: 0;
 }
 
 .main-content {
   flex-grow: 1;
   padding: 20px;
-  overflow-y: auto; /* Allow scrolling if content overflows */
+  /* Allow main content scrolling on desktop */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px; /* Space between sections */
+  /* Fix potential flex child overflow issues */
+  min-width: 0;
 }
 
 /* Card Style */
@@ -56,16 +66,19 @@ body {
   font-size: 1.4em;
   border-bottom: 2px solid #3498db;
   padding-bottom: 5px;
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 .sidebar h3 {
   margin-top: 20px;
   margin-bottom: 10px;
   font-size: 1.1em;
   color: #34495e;
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 .sidebar ul {
   list-style: none;
   margin-bottom: 20px;
+  flex-shrink: 0; /* Prevent list from shrinking excessively */
 }
 .sidebar li {
   padding: 8px 12px;
@@ -86,12 +99,17 @@ body {
 .sidebar #create-task-btn {
   width: 100%;
   margin-bottom: 15px;
+  flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .sidebar-section {
-  margin-top: auto; /* Push history/unscheduled to bottom if space allows */
+  /* margin-top: auto; /* Removed, can cause issues in column layout */ */
   padding-top: 15px;
   border-top: 1px solid #eee;
+  flex-shrink: 0; /* Prevent sections from shrinking excessively */
+}
+.sidebar-section h3 {
+   margin-top: 0; /* Adjust spacing after removing margin-top: auto */
 }
 
 /* Buttons */
@@ -105,13 +123,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  text-decoration: none; /* For potential future <a> buttons */
+  text-decoration: none;
   color: #333;
   background-color: #f0f0f0;
   border: 1px solid #ccc;
 }
 .btn:hover {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   background-color: #e8e8e8;
 }
 .btn-primary {
@@ -132,8 +150,10 @@ body {
 }
 
 /* Scheduler View */
-.scheduler-view h2,
-.scheduler-view h3 {
+.scheduler-view {
+  flex-shrink: 0; /* Prevent this section shrinking on mobile */
+}
+.scheduler-view h2, .scheduler-view h3 {
   text-align: center;
   margin-bottom: 15px;
   color: #2c3e50;
@@ -143,7 +163,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  flex-wrap: wrap; /* Allow wrapping on small screens */
+  flex-wrap: wrap;
   gap: 10px;
 }
 #current-date-display {
@@ -152,14 +172,15 @@ body {
 }
 
 /* Timeline & Task Lists */
-.timeline,
-.task-list {
-  min-height: 150px;
+.timeline, .task-list {
+  min-height: 150px; /* Ensure lists have visible area */
   border: 1px dashed #bdc3c7;
   border-radius: 5px;
   padding: 15px;
   background-color: #f8f9fa;
-  margin-top: 10px; /* Add some space */
+  margin-top: 10px;
+  /* Allow individual lists to scroll if needed, otherwise rely on main-content */
+  /* overflow-y: auto; */
 }
 #unscheduled-tasks-list {
   background-color: #fdfefe;
@@ -173,13 +194,14 @@ body {
   margin-bottom: 10px;
   border-radius: 6px;
   cursor: grab;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   transition: box-shadow 0.2s ease;
-  position: relative; /* For absolute positioned elements like priority */
+  position: relative;
+  padding-left: 20px; /* Ensure space for priority dot */
 }
 .task:active {
   cursor: grabbing;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 .task.dragging {
   opacity: 0.6;
@@ -193,8 +215,8 @@ body {
   font-size: 0.9em;
   color: #555;
   margin-bottom: 3px;
-  white-space: pre-wrap; /* Respect newlines in description */
-  word-break: break-word; /* Prevent long words from overflowing */
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .task .task-meta {
   font-size: 0.8em;
@@ -202,7 +224,7 @@ body {
   margin-top: 8px;
   display: flex;
   justify-content: space-between;
-  flex-wrap: wrap; /* Wrap meta info if needed */
+  flex-wrap: wrap;
   gap: 5px;
 }
 .task .task-actions {
@@ -215,35 +237,27 @@ body {
   font-size: 0.8em;
 }
 .task.overdue {
-  border-left: 5px solid #e74c3c; /* Red border for overdue */
+  border-left: 5px solid #e74c3c;
   background-color: #fdecea;
 }
 
 /* Priority Indicators */
 .task::before {
-  /* Using ::before for priority dot */
-  content: "";
+  content: '';
   position: absolute;
-  left: -12px; /* Position outside the padding */
+  /* Adjusted left position to account for padding-left on .task */
+  left: 6px;
   top: 50%;
   transform: translateY(-50%);
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #bdc3c7; /* Default (e.g., not urgent/not important) */
+  background-color: #bdc3c7;
 }
-.task.priority-urgent-important::before {
-  background-color: #e74c3c;
-} /* Red */
-.task.priority-not-urgent-important::before {
-  background-color: #f1c40f;
-} /* Yellow */
-.task.priority-urgent-not-important::before {
-  background-color: #3498db;
-} /* Blue */
-.task.priority-not-urgent-not-important::before {
-  background-color: #95a5a6;
-} /* Gray */
+.task.priority-urgent-important::before { background-color: #e74c3c; }
+.task.priority-not-urgent-important::before { background-color: #f1c40f; }
+.task.priority-urgent-not-important::before { background-color: #3498db; }
+.task.priority-not-urgent-not-important::before { background-color: #95a5a6; }
 
 /* Drop Zone Hover Effect */
 .drop-zone.drag-over {
@@ -253,25 +267,25 @@ body {
 
 /* Modal Styles */
 .modal {
-  display: none; /* Hidden by default */
+  display: none;
   position: fixed;
   z-index: 1000;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.5); /* Dim background */
+  overflow: auto; /* Allow modal itself to scroll if content overflows */
+  background-color: rgba(0, 0, 0, 0.5);
   animation: fadeIn 0.3s ease;
 }
 .modal-content {
   position: relative;
-  margin: 5% auto; /* Centered vertically for larger screens */
+  margin: 5% auto;
   padding: 30px;
   width: 90%;
   max-width: 600px;
-  max-height: 90vh; /* Limit height and allow scrolling */
-  overflow-y: auto;
+  max-height: 90vh; /* Limit height */
+  overflow-y: auto; /* Allow content INSIDE modal to scroll */
 }
 .close-btn {
   position: absolute;
@@ -306,7 +320,7 @@ body {
   font-size: 1em;
 }
 #task-form textarea {
-  resize: vertical; /* Allow vertical resize only */
+  resize: vertical;
 }
 #task-form small {
   font-size: 0.85em;
@@ -333,14 +347,14 @@ body {
   font-weight: normal;
 }
 .priority-matrix input[type="radio"] {
-  width: auto; /* Override default width */
+  width: auto;
 }
 .modal-buttons {
   margin-top: 25px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  flex-wrap: wrap; /* Wrap buttons if needed */
+  flex-wrap: wrap;
 }
 #task-history-view {
   margin-top: 20px;
@@ -366,6 +380,9 @@ body {
 }
 
 /* Dashboard Styles */
+.dashboard-view {
+   flex-shrink: 0; /* Prevent this section shrinking on mobile */
+}
 .dashboard-view h2 {
   text-align: center;
   margin-bottom: 20px;
@@ -381,7 +398,7 @@ body {
   border-radius: 6px;
   border: 1px solid #e8e8e8;
   display: flex;
-  flex-direction: column; /* Ensure content stacks vertically */
+  flex-direction: column;
 }
 .dashboard-item h3 {
   margin-bottom: 10px;
@@ -389,6 +406,7 @@ body {
   font-size: 1.2em;
   border-bottom: 1px solid #eee;
   padding-bottom: 5px;
+  flex-shrink: 0; /* Prevent header shrink */
 }
 .dashboard-item ul {
   list-style: none;
@@ -406,11 +424,12 @@ body {
 }
 .chart-container {
   position: relative;
-  min-height: 250px; /* Ensure space for the chart */
+  min-height: 250px; /* Minimum space */
+  /* Let Chart.js manage canvas size via options */
 }
 #focus-chart {
-  max-width: 100%; /* Ensure chart resizes */
-  max-height: 300px; /* Limit chart height */
+  max-width: 100%;
+  max-height: 300px; /* Limit canvas max height */
 }
 .weekly-summary label {
   display: block;
@@ -438,6 +457,7 @@ body {
   font-size: 0.9em;
   white-space: pre-wrap;
   border: 1px solid #ddd;
+  overflow-x: auto; /* Allow scrolling if content is wide */
 }
 .export-buttons {
   margin-top: 20px;
@@ -446,7 +466,8 @@ body {
   justify-content: flex-end;
   padding-top: 15px;
   border-top: 1px solid #eee;
-  flex-wrap: wrap; /* Wrap buttons if needed */
+  flex-wrap: wrap;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 /* Progress Bars (Optional) */
@@ -468,7 +489,7 @@ body {
 .progress-bar-fill {
   height: 100%;
   background-color: #3498db;
-  border-radius: 8px 0 0 8px; /* Keep rounded corners */
+  border-radius: 8px 0 0 8px;
   transition: width 0.5s ease-out;
   text-align: right;
   color: white;
@@ -479,98 +500,133 @@ body {
 
 /* Task History List in Sidebar */
 #task-history-list .task {
-  cursor: default; /* Not draggable */
+  cursor: default;
   background-color: #f9f9f9;
   opacity: 0.8;
-  border-left: 3px solid #bdc3c7; /* Indicate history */
+  border-left: 3px solid #bdc3c7;
 }
 #task-history-list .task::before {
-  display: none; /* Hide priority dot for history */
+  display: none;
 }
 #task-history-list .task .task-actions {
-  display: none; /* Hide actions for history items */
+  display: none;
 }
 
 /* Animation */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 @keyframes slideIn {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+   from { transform: translateY(-20px); opacity: 0; }
+   to { transform: translateY(0); opacity: 1; }
 }
 .modal-content {
   animation: slideIn 0.3s ease forwards;
 }
 
-/* Responsive Design */
+/* ------------- Responsive Design ------------- */
 @media (max-width: 992px) {
   .dashboard-grid {
-    grid-template-columns: repeat(
-      auto-fit,
-      minmax(250px, 1fr)
-    ); /* Adjust grid for tablets */
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   }
-  .sidebar {
-    width: 240px; /* Slightly smaller sidebar */
+   .sidebar {
+      width: 240px;
   }
 }
 
 @media (max-width: 768px) {
   .app-container {
-    flex-direction: column; /* Stack sidebar and main content */
-    height: auto; /* Allow content to determine height */
-    min-height: 100vh;
+      flex-direction: column;
+      /* Ensure it takes full viewport height */
+      height: 100vh;
+      overflow: hidden; /* Prevent overflow issues */
   }
+
   .sidebar {
-    width: 100%; /* Full width */
-    border-right: none;
-    border-bottom: 1px solid #e0e0e0;
-    height: auto; /* Adjust height */
-    max-height: 40vh; /* Limit initial height, allow scrolling */
-    overflow-y: auto;
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid #e0e0e0;
+      /* --- Mobile Sidebar Fixes --- */
+      /* REMOVED max-height: 40vh; */
+      height: auto; /* Let content determine height */
+      min-height: 100px; /* Optional: minimum space */
+      flex-shrink: 0; /* CRITICAL: Prevent shrinking */
+      overflow-y: auto; /* CRITICAL: Allow sidebar to scroll */
+      /* --- End Mobile Sidebar Fixes --- */
   }
+
+  .sidebar-section {
+       /* margin-top: auto; /* REMOVED THIS */ */
+       padding-top: 15px;
+       border-top: 1px solid #eee;
+       /* Adjust spacing if needed */
+       margin-top: 10px;
+  }
+  .sidebar-section:first-of-type {
+      margin-top: 0; /* No top margin for the first section */
+  }
+
+
   .main-content {
-    padding: 15px; /* Reduce padding */
+      padding: 15px;
+      flex-grow: 1; /* CRITICAL: Allow main to take remaining space */
+      overflow-y: auto; /* CRITICAL: Allow main content to scroll */
+      min-height: 0; /* Fix flexbox calculation issues */
   }
+
+  /* Ensure sections don't shrink away */
+   .scheduler-view, .dashboard-view {
+       flex-shrink: 0;
+   }
+
   .scheduler-controls {
-    flex-direction: column; /* Stack controls vertically */
-    align-items: stretch; /* Make buttons full width */
+      flex-direction: column; /* Stack controls */
+      align-items: stretch; /* Make buttons full width */
   }
   #current-date-display {
-    text-align: center;
-    margin: 10px 0;
+      text-align: center;
+      margin: 10px 0;
   }
+
   .modal-content {
-    width: 95%;
-    margin: 10% auto; /* Adjust margin for smaller screens */
-    padding: 20px;
+      width: 95%;
+      margin: 5% auto; /* Adjust margin */
+      padding: 20px;
+      max-height: 85vh; /* Reduce max height slightly */
   }
+
   .priority-matrix {
-    grid-template-columns: 1fr; /* Stack priority options */
+      grid-template-columns: 1fr; /* Stack priority options */
   }
+
   .dashboard-grid {
-    grid-template-columns: 1fr; /* Single column layout */
+      grid-template-columns: 1fr; /* Single column */
+      gap: 15px;
   }
-  .export-buttons,
-  .modal-buttons {
-    justify-content: center; /* Center buttons */
+
+  .export-buttons, .modal-buttons {
+      justify-content: center;
+  }
+
+  .task {
+      padding-left: 20px; /* Keep space for dot */
   }
   .task::before {
-    left: 5px; /* Adjust priority dot position */
+      left: 6px; /* Ensure dot is positioned correctly with padding */
   }
-  .task {
-    padding-left: 20px; /* Make space for the dot */
-  }
+
+  /* Chart Container Mobile */
+   .chart-container {
+      min-height: 250px;
+      /* Give explicit or relative height */
+      height: 300px; /* Fixed height example */
+      max-height: 45vh; /* Or viewport relative */
+      position: relative;
+   }
+   #focus-chart {
+      max-width: 100%;
+      max-height: 100%; /* Respect container */
+   }
 }
+/* --- End Media Query --- */

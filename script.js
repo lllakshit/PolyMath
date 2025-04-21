@@ -85,7 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (storedTasks) {
       try {
         tasks = JSON.parse(storedTasks);
-        // Basic validation: Ensure it's an array and tasks have history
         if (
           !Array.isArray(tasks) ||
           tasks.some((t) => !t.id || !Array.isArray(t.history))
@@ -94,19 +93,18 @@ document.addEventListener("DOMContentLoaded", () => {
             "Invalid task structure found in localStorage. Resetting."
           );
           tasks = [];
-          saveTasks(); // Clear invalid storage
+          saveTasks();
         }
       } catch (e) {
         console.error("Error parsing tasks from localStorage:", e);
-        tasks = []; // Reset if parsing fails
+        tasks = [];
       }
     } else {
-      tasks = []; // Initialize if nothing is stored
+      tasks = [];
     }
-    // Ensure every task has an ID and history array (migration for older formats if needed)
     tasks = tasks.map((task) => ({
-      id: task.id || generateUniqueId(), // Assign ID if missing
-      history: Array.isArray(task.history) ? task.history : [task], // Convert old format if necessary
+      id: task.id || generateUniqueId(),
+      history: Array.isArray(task.history) ? task.history : [task],
     }));
   }
 
@@ -118,13 +116,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function getLatestTaskVersion(taskId) {
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.history.length === 0) return null;
-    // Find the last entry that isn't marked as deleted
     for (let i = task.history.length - 1; i >= 0; i--) {
       if (!task.history[i].deleted) {
-        return { ...task.history[i], id: task.id, historyId: i }; // Return a copy with ID and history index
+        return { ...task.history[i], id: task.id, historyId: i };
       }
     }
-    return null; // All versions are deleted or history is empty
+    return null;
   }
 
   function getAllActiveTasks() {
@@ -134,7 +131,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getAllTaskHistory() {
-    // Flattens history for export or detailed views
     let flatHistory = [];
     tasks.forEach((task) => {
       task.history.forEach((version, index) => {
@@ -142,11 +138,11 @@ document.addEventListener("DOMContentLoaded", () => {
           taskId: task.id,
           historyIndex: index,
           timestamp: version.timestamp,
-          ...version, // Spread the rest of the version data
+          ...version,
         });
       });
     });
-    return flatHistory.sort((a, b) => b.timestamp - a.timestamp); // Sort newest first
+    return flatHistory.sort((a, b) => b.timestamp - a.timestamp);
   }
 
   // --- Task CRUD Functions ---
@@ -163,9 +159,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     tasks.push(newTask);
     saveTasks();
-    renderTask(newTask.id); // Render the new task in the correct list
+    // Re-render the current date's view to show the new task if applicable
+    navigateToDate(currentViewDate); // Changed this to re-render the whole view
     renderDashboard();
-    renderSidebarHistory(); // Update sidebar history
+    renderSidebarHistory();
+    closeModal(); // Ensure modal closes after creation
   }
 
   function updateTask(taskId, updatedData) {
@@ -174,18 +172,17 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Task not found for update:", taskId);
       return;
     }
-    // Add a new history entry
     tasks[taskIndex].history.push({
       timestamp: Date.now(),
       ...updatedData,
       deleted: false,
     });
     saveTasks();
-    // Re-render the specific task and dashboard
-    renderTask(taskId);
+    // Re-render the current date's view to update task or move it
+    navigateToDate(currentViewDate); // Changed this to re-render the whole view
     renderDashboard();
-    renderSidebarHistory(); // Update sidebar history
-    closeModal(); // Close modal after update
+    renderSidebarHistory();
+    closeModal(); // Ensure modal closes after update
   }
 
   function deleteTask(taskId) {
@@ -193,37 +190,39 @@ document.addEventListener("DOMContentLoaded", () => {
     if (taskIndex === -1) return;
 
     const latestVersion = getLatestTaskVersion(taskId);
-    if (!latestVersion) return; // Already deleted or no history
+    if (!latestVersion) return;
 
-    // Mark the latest version as deleted by adding a new history entry
     const deletionRecord = {
-      ...latestVersion, // Copy data from the last active state
+      ...latestVersion,
       timestamp: Date.now(),
       deleted: true,
     };
-    delete deletionRecord.id; // Remove redundant id from history record
-    delete deletionRecord.historyId; // Remove redundant historyId
+    delete deletionRecord.id;
+    delete deletionRecord.historyId;
 
     tasks[taskIndex].history.push(deletionRecord);
-
     saveTasks();
 
-    // Remove the task element from the DOM
-    const taskElement = document.querySelector(
-      `.task[data-task-id="${taskId}"]`
-    );
-    if (taskElement) {
-      taskElement.remove();
-    }
-
+    // Re-render the current view to remove the task visually
+    navigateToDate(currentViewDate); // Changed this to re-render the whole view
     renderDashboard();
-    renderSidebarHistory(); // Update sidebar history
+    renderSidebarHistory();
     closeModal();
   }
 
   // --- Rendering Functions ---
 
   function formatDate(date) {
+    // Ensure input is a Date object
+    if (!(date instanceof Date) || isNaN(date)) {
+      // Try parsing if it's a string like YYYY-MM-DD
+      if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        date = new Date(date + "T00:00:00"); // Treat as local time start of day
+        if (isNaN(date)) return "Invalid Date"; // Still invalid after parsing
+      } else {
+        return "Invalid Date";
+      }
+    }
     return date.toLocaleDateString(undefined, {
       weekday: "long",
       year: "numeric",
@@ -233,7 +232,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function formatDateISO(date) {
-    // Ensure the date is treated as local time when converting to ISO string
+    if (!(date instanceof Date) || isNaN(date)) {
+      return "";
+    }
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const day = date.getDate().toString().padStart(2, "0");
@@ -241,8 +242,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function navigateToDate(date) {
-    currentViewDate = new Date(date); // Ensure it's a new Date object
-    currentViewDate.setHours(0, 0, 0, 0); // Normalize to start of day
+    currentViewDate = new Date(date);
+    currentViewDate.setHours(0, 0, 0, 0);
 
     const formattedDate = formatDate(currentViewDate);
     currentDateDisplay.textContent = formattedDate;
@@ -252,126 +253,157 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSchedulerForDate(date) {
-    scheduledTasksList.innerHTML = ""; // Clear current scheduled tasks
-    unscheduledTasksList.innerHTML = ""; // Clear current unscheduled tasks
+    scheduledTasksList.innerHTML = "";
+    unscheduledTasksList.innerHTML = "";
 
     const isoDateString = formatDateISO(date);
-    const todayIsoString = formatDateISO(new Date());
+    const today = new Date(); // Get today's date for overdue check
+    today.setHours(0, 0, 0, 0);
     const activeTasks = getAllActiveTasks();
 
+    // --- Add Debug Logs ---
+    console.log(
+      `Mobile Debug: Rendering for date: ${isoDateString}. Found ${activeTasks.length} active tasks.`
+    );
+    if (activeTasks.length > 0) {
+      console.log(
+        "Mobile Debug: First active task data:",
+        JSON.stringify(activeTasks[0])
+      );
+    }
+    // ---------------------
+
     activeTasks.forEach((task) => {
+      // --- Add Debug Log ---
+      console.log(
+        `Mobile Debug: Checking Task ID ${task.id}, Title: ${task.title}, Scheduled: ${task.scheduledDate}`
+      );
+      // --------------------
       const taskElement = createTaskElement(task);
+      // Check if task is scheduled for the currently viewed date
       if (task.scheduledDate === isoDateString) {
+        console.log(
+          `Mobile Debug: -> Adding task ${task.id} to SCHEDULED list.`
+        ); // DEBUG
         scheduledTasksList.appendChild(taskElement);
-        // Highlight overdue *before* adding to list
-        if (task.scheduledDate < todayIsoString) {
+        // Check if overdue (and actually has a date)
+        if (
+          task.scheduledDate &&
+          new Date(task.scheduledDate + "T00:00:00") < today
+        ) {
           taskElement.classList.add("overdue");
         }
+        // Check if task is unscheduled
       } else if (!task.scheduledDate) {
+        console.log(
+          `Mobile Debug: -> Adding task ${task.id} to UNSCHEDULED list.`
+        ); // DEBUG
         unscheduledTasksList.appendChild(taskElement);
       }
-      // Tasks scheduled for other dates are not rendered here
+      // Otherwise, task is for a different date, do nothing here
     });
 
-    // Add drag listeners to newly rendered tasks
+    // --- Add Debug Logs ---
+    console.log(
+      "Mobile Debug: Scheduled List Child Count:",
+      scheduledTasksList.children.length
+    );
+    console.log(
+      "Mobile Debug: Unscheduled List Child Count:",
+      unscheduledTasksList.children.length
+    );
+    // ---------------------
+
     addDragListenersToTasks();
   }
 
-  function renderTask(taskId) {
-    // Find the task element if it exists and remove it before re-rendering
-    const existingElement = document.querySelector(
-      `.task[data-task-id="${taskId}"]`
-    );
-    if (existingElement) {
-      existingElement.remove();
-    }
-
-    const task = getLatestTaskVersion(taskId);
-    if (!task) return; // Task might have been deleted
-
-    const taskElement = createTaskElement(task);
-    const todayIsoString = formatDateISO(new Date());
-
-    // Append to the correct list
-    if (task.scheduledDate === formatDateISO(currentViewDate)) {
-      scheduledTasksList.appendChild(taskElement);
-      if (task.scheduledDate < todayIsoString) {
-        taskElement.classList.add("overdue");
-      }
-    } else if (!task.scheduledDate) {
-      unscheduledTasksList.appendChild(taskElement);
-    }
-    // No need to append if it's for a different date than currently viewed
-
-    addDragListenersToTask(taskElement); // Add listeners to the specific new/updated task
-  }
+  /* // Removed renderTask as primary render function, now handled by navigateToDate/renderSchedulerForDate
+  function renderTask(taskId) { ... }
+  */
 
   function createTaskElement(task) {
     const div = document.createElement("div");
     div.classList.add("task");
     div.classList.add(
       `priority-${task.priority || "not-urgent-not-important"}`
-    ); // Add priority class
+    );
     div.setAttribute("draggable", "true");
     div.setAttribute("data-task-id", task.id);
 
-    // Add overdue class if applicable (check against today's date)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (task.scheduledDate && new Date(task.scheduledDate) < today) {
+    // Check if overdue (and has a valid date)
+    if (
+      task.scheduledDate &&
+      new Date(task.scheduledDate + "T00:00:00") < today
+    ) {
       div.classList.add("overdue");
     }
 
-    div.innerHTML = `
-            <h4>${escapeHTML(task.title || "No Title")}</h4>
-            <p><strong>Category:</strong> ${escapeHTML(
-              task.category || "N/A"
-            )}</p>
-            ${task.description ? `<p>${escapeHTML(task.description)}</p>` : ""}
-            <div class="task-meta">
-                <span>${task.estTime ? `Est: ${task.estTime} min` : ""}</span>
-                <span>Focus: ${escapeHTML(task.focus || "N/A")}</span>
-                ${
-                  task.scheduledDate
-                    ? `<span>Due: ${formatDate(
-                        new Date(task.scheduledDate + "T00:00:00")
-                      )}</span>`
-                    : "<span>Unscheduled</span>"
-                }
-            </div>
-            <div class="task-actions">
-                <button class="btn edit-task-btn"><i class="fas fa-edit"></i> Edit</button>
-                <button class="btn reschedule-task-btn"><i class="fas fa-calendar-alt"></i> Reschedule</button>
-            </div>
-        `;
+    // Format due date safely
+    let dueDateFormatted = "Unscheduled";
+    if (task.scheduledDate) {
+      try {
+        dueDateFormatted = `Due: ${formatDate(
+          new Date(task.scheduledDate + "T00:00:00")
+        )}`;
+      } catch (e) {
+        dueDateFormatted = "Due: Invalid Date";
+      }
+    }
 
-    // Add event listeners for buttons within the task element
+    div.innerHTML = `
+          <h4>${escapeHTML(task.title || "No Title")}</h4>
+          <p><strong>Category:</strong> ${escapeHTML(
+            task.category || "N/A"
+          )}</p>
+          ${task.description ? `<p>${escapeHTML(task.description)}</p>` : ""}
+          <div class="task-meta">
+              <span>${task.estTime ? `Est: ${task.estTime} min` : ""}</span>
+              <span>Focus: ${escapeHTML(task.focus || "N/A")}</span>
+              <span>${dueDateFormatted}</span>
+          </div>
+          <div class="task-actions">
+              <button class="btn edit-task-btn"><i class="fas fa-edit"></i> Edit</button>
+              <button class="btn reschedule-task-btn"><i class="fas fa-calendar-alt"></i> Reschedule</button>
+          </div>
+      `;
+
     div.querySelector(".edit-task-btn").addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent triggering drag start
+      e.stopPropagation();
       openModalForEdit(task.id);
     });
 
     div.querySelector(".reschedule-task-btn").addEventListener("click", (e) => {
       e.stopPropagation();
-      // Simple reschedule: Prompt for a new date or open modal focused on date
+      const currentScheduledDate =
+        getLatestTaskVersion(task.id)?.scheduledDate || ""; // Get latest date for prompt
       const newDateStr = prompt(
         `Reschedule "${task.title}"\nEnter new date (YYYY-MM-DD) or leave blank to unschedule:`,
-        task.scheduledDate || ""
+        currentScheduledDate
       );
+
       if (newDateStr !== null) {
-        // Handle cancel vs empty string
-        const updatedData = { ...getLatestTaskVersion(task.id) };
-        delete updatedData.id; // Don't store id in history data
+        const latestVersion = getLatestTaskVersion(task.id);
+        if (!latestVersion) return; // Should not happen if element exists
+
+        const updatedData = { ...latestVersion }; // Copy latest data
+        delete updatedData.id;
         delete updatedData.historyId;
-        updatedData.scheduledDate = newDateStr === "" ? null : newDateStr; // Handle unscheduling
-        if (newDateStr && !isValidDate(newDateStr)) {
+        const oldDate = updatedData.scheduledDate;
+
+        if (newDateStr === "") {
+          updatedData.scheduledDate = null; // Unschedule
+        } else if (isValidDate(newDateStr)) {
+          updatedData.scheduledDate = newDateStr;
+        } else {
           alert("Invalid date format. Please use YYYY-MM-DD.");
-          return;
+          return; // Don't proceed if date is invalid
         }
-        updateTask(task.id, updatedData);
-        // Re-render the current view if the task moved in/out of it
-        if (task.scheduledDate !== updatedData.scheduledDate) {
-          navigateToDate(currentViewDate);
+
+        // Only update if the date actually changed
+        if (oldDate !== updatedData.scheduledDate) {
+          updateTask(task.id, updatedData);
         }
       }
     });
@@ -384,10 +416,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const recentHistory = getAllTaskHistory().slice(0, 10); // Show latest 10 changes
 
     recentHistory.forEach((entry) => {
-      // Create a simplified, non-draggable task element for history
       const div = document.createElement("div");
-      div.classList.add("task", "history-item"); // Add 'history-item' class
-      div.setAttribute("data-task-id", entry.taskId); // Still link to the task
+      div.classList.add("task", "history-item");
+      div.setAttribute("data-task-id", entry.taskId);
 
       let action = entry.deleted
         ? "Deleted"
@@ -398,17 +429,15 @@ document.addEventListener("DOMContentLoaded", () => {
       let dateInfo = entry.scheduledDate
         ? ` on ${entry.scheduledDate}`
         : " (unscheduled)";
-      if (entry.deleted) dateInfo = ""; // No date needed for deletion record
+      if (entry.deleted) dateInfo = "";
 
       div.innerHTML = `
-                <p><strong>${action}:</strong> ${escapeHTML(
-        title
-      )}${dateInfo}</p>
-                <div class="task-meta">
-                    <span>${new Date(entry.timestamp).toLocaleString()}</span>
-                     <span>By: System</span> </div>
-             `;
-      // Optional: Add click listener to view full task details/history in modal
+              <p><strong>${action}:</strong> ${escapeHTML(title)}${dateInfo}</p>
+              <div class="task-meta">
+                  <span>${new Date(entry.timestamp).toLocaleString()}</span>
+                   <span>By: System</span>
+               </div>
+           `;
       div.addEventListener("click", () => openModalForEdit(entry.taskId));
       taskHistorySidebarList.appendChild(div);
     });
@@ -417,19 +446,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Modal Handling ---
   function openModalForCreate(category = "") {
     modalTitle.textContent = "Create New Task";
-    taskForm.reset(); // Clear previous values
-    taskIdInput.value = ""; // Ensure no ID is set for creation
-    deleteTaskBtn.style.display = "none"; // Hide delete button
-    taskHistoryView.style.display = "none"; // Hide history view
-    taskHistoryItemsUl.innerHTML = ""; // Clear history list
+    taskForm.reset();
+    taskIdInput.value = "";
+    deleteTaskBtn.style.display = "none";
+    taskHistoryView.style.display = "none";
+    taskHistoryItemsUl.innerHTML = "";
 
-    // Pre-fill category if provided (e.g., from sidebar click)
     if (category && DISCIPLINES.includes(category)) {
       document.getElementById("task-category").value = category;
     }
 
     taskModal.style.display = "block";
-    document.getElementById("task-title").focus(); // Focus the first field
+    document.getElementById("task-title").focus();
   }
 
   function openModalForEdit(taskId) {
@@ -440,9 +468,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     modalTitle.textContent = "Edit Task";
-    taskForm.reset(); // Clear previous potentially invalid state
+    taskForm.reset();
 
-    // Populate form
     taskIdInput.value = task.id;
     document.getElementById("task-title").value = task.title || "";
     document.getElementById("task-category").value = task.category || "";
@@ -452,18 +479,21 @@ document.addEventListener("DOMContentLoaded", () => {
       task.scheduledDate || "";
     document.getElementById("task-focus").value = task.focus || "";
 
-    // Set priority radio button
     const priorityRadios = taskForm.querySelectorAll('input[name="priority"]');
+    let prioritySet = false;
     priorityRadios.forEach((radio) => {
       radio.checked = radio.value === task.priority;
+      if (radio.checked) prioritySet = true;
     });
-    if (!task.priority) {
-      // Ensure one is checked if none was saved previously
-      priorityRadios[3].checked = true; // Default to not urgent/not important
+    if (!prioritySet) {
+      // Default if no priority was saved
+      taskForm.querySelector(
+        'input[name="priority"][value="not-urgent-not-important"]'
+      ).checked = true;
     }
 
-    deleteTaskBtn.style.display = "inline-block"; // Show delete button
-    renderTaskHistoryInModal(taskId); // Show history
+    deleteTaskBtn.style.display = "inline-block";
+    renderTaskHistoryInModal(taskId);
     taskHistoryView.style.display = "block";
 
     taskModal.style.display = "block";
@@ -474,7 +504,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task || !task.history) return;
 
-    // Reverse history to show latest first
     [...task.history].reverse().forEach((version, index) => {
       const li = document.createElement("li");
       const timestamp = new Date(version.timestamp).toLocaleString();
@@ -486,14 +515,13 @@ document.addEventListener("DOMContentLoaded", () => {
       li.innerHTML = `<strong>${timestamp}:</strong> ${changeDesc} - Title: ${escapeHTML(
         version.title || "N/A"
       )}, Due: ${version.scheduledDate || "Unscheduled"}`;
-      // Optional: Add more details on hover or click
       taskHistoryItemsUl.appendChild(li);
     });
   }
 
   function closeModal() {
     taskModal.style.display = "none";
-    taskForm.reset(); // Clear form when closing
+    taskForm.reset();
   }
 
   function handleFormSubmit(event) {
@@ -507,14 +535,20 @@ document.addEventListener("DOMContentLoaded", () => {
       estTime:
         parseInt(document.getElementById("task-est-time").value, 10) || null,
       scheduledDate:
-        document.getElementById("task-scheduled-date").value || null, // Store null if empty
+        document.getElementById("task-scheduled-date").value || null,
       priority:
         taskForm.querySelector('input[name="priority"]:checked')?.value ||
         "not-urgent-not-important",
       focus: document.getElementById("task-focus").value,
     };
 
-    // Basic validation
+    // --- Add This Debug Log ---
+    console.log(
+      "Mobile Debug: Task Data Being Saved:",
+      JSON.stringify(taskData)
+    );
+    // -------------------------
+
     if (!taskData.title) {
       alert("Task title is required.");
       return;
@@ -523,22 +557,17 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Please select a category.");
       return;
     }
+    // Validate date format only if a date is provided
     if (taskData.scheduledDate && !isValidDate(taskData.scheduledDate)) {
-      alert("Invalid scheduled date format.");
+      alert("Invalid scheduled date format. Please use YYYY-MM-DD.");
       return;
     }
 
     if (taskId) {
-      // Editing existing task - create a new history entry
       updateTask(taskId, taskData);
     } else {
-      // Creating new task
       createTask(taskData);
     }
-
-    // No need to close modal here, updateTask/createTask calls it
-    // Or we can close explicitly:
-    // closeModal();
   }
 
   // --- Drag and Drop ---
@@ -550,41 +579,53 @@ document.addEventListener("DOMContentLoaded", () => {
   function addDragListenersToTask(taskElement) {
     taskElement.addEventListener("dragstart", handleDragStart);
     taskElement.addEventListener("dragend", handleDragEnd);
-    // Touch events for mobile compatibility
+    // Touch events
     taskElement.addEventListener("touchstart", handleTouchStart, {
       passive: false,
-    }); // Need passive:false to preventDefault potentially
+    });
     taskElement.addEventListener("touchmove", handleTouchMove, {
       passive: false,
     });
     taskElement.addEventListener("touchend", handleTouchEnd);
   }
 
-  // --- Drag and Drop Handlers ---
   function handleDragStart(e) {
-    draggedTaskId = e.target.closest(".task").dataset.taskId;
-    e.dataTransfer.setData("text/plain", draggedTaskId);
-    e.dataTransfer.effectAllowed = "move";
-    // Use setTimeout to allow the browser to render the drag image before adding class
-    setTimeout(() => e.target.closest(".task").classList.add("dragging"), 0);
+    // Make sure we're targeting the task element itself
+    const taskElement = e.target.closest(".task");
+    if (!taskElement) return;
+
+    draggedTaskId = taskElement.dataset.taskId;
+    // Use try-catch for dataTransfer in case of edge cases/browser issues
+    try {
+      e.dataTransfer.setData("text/plain", draggedTaskId);
+      e.dataTransfer.effectAllowed = "move";
+    } catch (err) {
+      console.error("Error setting drag data:", err);
+      // Fallback or alternative handling might be needed
+    }
+    setTimeout(() => taskElement.classList.add("dragging"), 0);
   }
 
   function handleDragEnd(e) {
-    e.target.closest(".task").classList.remove("dragging");
+    const taskElement = e.target.closest(".task");
+    if (taskElement) {
+      // Check if element still exists
+      taskElement.classList.remove("dragging");
+    }
     draggedTaskId = null;
-    // Remove hover effect from all drop zones
     document
       .querySelectorAll(".drop-zone")
       .forEach((zone) => zone.classList.remove("drag-over"));
   }
 
   function handleDragOver(e) {
-    e.preventDefault(); // Necessary to allow dropping
-    e.dataTransfer.dropEffect = "move";
-    // Add hover effect to the drop zone
+    e.preventDefault();
+    if (e.dataTransfer) {
+      // Check if dataTransfer is available
+      e.dataTransfer.dropEffect = "move";
+    }
     const dropZone = e.target.closest(".drop-zone");
     if (dropZone && !dropZone.classList.contains("drag-over")) {
-      // Remove from other zones first
       document
         .querySelectorAll(".drop-zone")
         .forEach((zone) => zone.classList.remove("drag-over"));
@@ -593,12 +634,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleDragLeave(e) {
-    // Remove hover effect if leaving the drop zone or its children
     const dropZone = e.target.closest(".drop-zone");
-    if (dropZone && e.relatedTarget && !dropZone.contains(e.relatedTarget)) {
-      dropZone.classList.remove("drag-over");
-    } else if (!e.relatedTarget && dropZone) {
-      // Handle leaving the browser window edge case
+    // Check if the relatedTarget (where the mouse entered) is outside the current dropZone
+    if (dropZone && (!e.relatedTarget || !dropZone.contains(e.relatedTarget))) {
       dropZone.classList.remove("drag-over");
     }
   }
@@ -606,159 +644,161 @@ document.addEventListener("DOMContentLoaded", () => {
   function handleDrop(e) {
     e.preventDefault();
     const dropZone = e.target.closest(".drop-zone");
-    if (!dropZone || !draggedTaskId) return;
+    if (!dropZone) return;
 
     dropZone.classList.remove("drag-over");
-    const taskId = draggedTaskId; // Use the variable set in dragstart
-    const task = getLatestTaskVersion(taskId);
-    if (!task) return;
+    let taskIdToDrop = null;
 
-    const targetDate = dropZone.dataset.date; // 'YYYY-MM-DD' or 'unscheduled'
+    // Try getting data from dataTransfer first (standard)
+    try {
+      taskIdToDrop = e.dataTransfer.getData("text/plain");
+    } catch (err) {
+      console.error("Error getting drag data from dataTransfer:", err);
+    }
 
-    // Prepare updated data based on the latest version
+    // Fallback to the globally stored ID if dataTransfer failed
+    if (!taskIdToDrop && draggedTaskId) {
+      console.warn("Using globally stored draggedTaskId as fallback.");
+      taskIdToDrop = draggedTaskId;
+    }
+
+    if (!taskIdToDrop) {
+      console.error("Could not determine dropped task ID.");
+      draggedTaskId = null; // Reset global just in case
+      return;
+    }
+
+    const task = getLatestTaskVersion(taskIdToDrop);
+    if (!task) {
+      console.error(`Task data not found for dropped ID: ${taskIdToDrop}`);
+      draggedTaskId = null; // Reset global
+      return;
+    }
+
+    const targetDate = dropZone.dataset.date;
+
     const updatedData = { ...task };
-    delete updatedData.id; // Don't store id in history data
+    delete updatedData.id;
     delete updatedData.historyId;
+    const oldDate = updatedData.scheduledDate;
 
-    if (targetDate === "unscheduled") {
-      updatedData.scheduledDate = null;
-    } else {
-      updatedData.scheduledDate = targetDate; // Assume drop zone has 'YYYY-MM-DD'
+    updatedData.scheduledDate =
+      targetDate === "unscheduled" ? null : targetDate;
+
+    if (oldDate !== updatedData.scheduledDate) {
+      updateTask(taskIdToDrop, updatedData);
     }
 
-    // Only update if the date actually changed
-    if (task.scheduledDate !== updatedData.scheduledDate) {
-      updateTask(taskId, updatedData);
-      // Manually move the element in the DOM for immediate feedback,
-      // or rely on re-rendering triggered by updateTask.
-      // For simplicity, rely on re-rendering the current view:
-      navigateToDate(currentViewDate);
-    }
-
-    draggedTaskId = null; // Reset after drop
+    draggedTaskId = null; // Reset global ID after successful drop
   }
 
-  // --- Touch Event Handlers for Drag/Drop (Simplified) ---
-  // Note: This is a basic implementation. Robust touch drag-and-drop often requires libraries
-  // or more complex logic to handle scrolling, precision, and visual feedback.
+  // --- Touch Event Handlers (Simplified) ---
   let touchStartX, touchStartY;
   let draggedElement = null;
-  let placeholder = null; // Element to show where item will drop
+  let isDragging = false; // Flag to confirm drag intent
 
   function handleTouchStart(e) {
-    // Prevent default scroll behavior only if dragging starts
-    // e.preventDefault(); // Maybe prevent later based on movement
     draggedElement = e.target.closest(".task");
     if (!draggedElement) return;
+
+    // Only prevent default if we intend to drag (e.g., long press or specific handle)
+    // For now, let's assume any touch might start a drag
+    // e.preventDefault(); // This can prevent scrolling, use carefully
 
     draggedTaskId = draggedElement.dataset.taskId;
     const touch = e.touches[0];
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
+    isDragging = false; // Reset drag flag
 
-    // Style the element being dragged (optional)
-    draggedElement.classList.add("dragging"); // Use existing class
-
-    // Create placeholder (optional but good UX)
-    placeholder = draggedElement.cloneNode(false); // shallow clone
-    placeholder.style.height = `${draggedElement.offsetHeight}px`;
-    placeholder.style.backgroundColor = "#e0e0e0";
-    placeholder.style.opacity = "0.5";
-    placeholder.style.border = "1px dashed #999";
-    placeholder.innerText = "Drop here..."; // Clear content
-    // Insert placeholder after the dragged element temporarily
-    // draggedElement.parentNode.insertBefore(placeholder, draggedElement.nextSibling);
-
-    // Make the original slightly transparent while dragging
-    // draggedElement.style.opacity = '0.8';
-
-    // We might need to append the dragged element to the body for free movement
-    // and position it absolutely based on touch coords. This gets complex quickly.
-    // Let's stick to simpler visual cues for now.
+    // Add subtle visual cue immediately
+    // draggedElement.style.opacity = '0.9';
   }
 
   function handleTouchMove(e) {
     if (!draggedElement || !draggedTaskId) return;
-    e.preventDefault(); // Prevent scrolling *while* dragging
 
     const touch = e.touches[0];
     const currentX = touch.clientX;
     const currentY = touch.clientY;
+    const deltaX = Math.abs(currentX - touchStartX);
+    const deltaY = Math.abs(currentY - touchStartY);
 
-    // Basic movement check (can be improved)
-    // const dx = currentX - touchStartX;
-    // const dy = currentY - touchStartY;
+    // Only initiate 'drag mode' if moved beyond a threshold
+    // and primarily vertically (or adjust as needed)
+    if (!isDragging && (deltaY > 10 || deltaX > 10)) {
+      // Threshold of 10px
+      isDragging = true;
+      // Add dragging class only when confirmed drag starts
+      draggedElement.classList.add("dragging");
+    }
 
-    // Find the element under the touch point
-    draggedElement.style.display = "none"; // Temporarily hide original to find element underneath
-    const elementUnderTouch = document.elementFromPoint(currentX, currentY);
-    draggedElement.style.display = ""; // Show original again
+    if (isDragging) {
+      e.preventDefault(); // Prevent scrolling *while* dragging
 
-    // Find the nearest drop zone
-    const dropZone = elementUnderTouch
-      ? elementUnderTouch.closest(".drop-zone")
-      : null;
+      // Temporarily hide element to find what's underneath
+      draggedElement.style.visibility = "hidden";
+      const elementUnderTouch = document.elementFromPoint(currentX, currentY);
+      draggedElement.style.visibility = "visible";
 
-    // Update drop zone highlight
-    document.querySelectorAll(".drop-zone").forEach((zone) => {
-      if (zone === dropZone) {
-        zone.classList.add("drag-over");
-      } else {
-        zone.classList.remove("drag-over");
-      }
-    });
+      const dropZone = elementUnderTouch
+        ? elementUnderTouch.closest(".drop-zone")
+        : null;
 
-    // Move the placeholder (if using one)
-    // if (placeholder && dropZone) {
-    //     const taskUnder = elementUnderTouch.closest('.task');
-    //     if (taskUnder && taskUnder !== draggedElement) {
-    //         dropZone.insertBefore(placeholder, taskUnder);
-    //     } else {
-    //         dropZone.appendChild(placeholder); // Append to end if not over another task
-    //     }
-    // }
-
-    // Update position of absolutely positioned drag element (if implemented)
-    // draggedElement.style.left = `${currentX - offsetX}px`;
-    // draggedElement.style.top = `${currentY - offsetY}px`;
+      document.querySelectorAll(".drop-zone").forEach((zone) => {
+        if (zone === dropZone) {
+          zone.classList.add("drag-over");
+        } else {
+          zone.classList.remove("drag-over");
+        }
+      });
+    }
   }
 
   function handleTouchEnd(e) {
-    if (!draggedElement || !draggedTaskId) return;
+    if (!draggedElement || !draggedTaskId || !isDragging) {
+      // Cleanup if no drag occurred or invalid state
+      if (draggedElement) draggedElement.classList.remove("dragging");
+      draggedElement = null;
+      draggedTaskId = null;
+      isDragging = false;
+      document
+        .querySelectorAll(".drop-zone")
+        .forEach((zone) => zone.classList.remove("drag-over"));
+      return;
+    }
 
-    // Find the final drop zone based on the last touch point (might be less reliable than elementFromPoint)
+    // Find the drop zone that has the hover effect
     const dropZone = document.querySelector(".drop-zone.drag-over");
 
     if (dropZone) {
-      dropZone.classList.remove("drag-over");
-      const taskId = draggedTaskId;
+      const taskId = draggedTaskId; // Use ID captured at start
       const task = getLatestTaskVersion(taskId);
       if (task) {
         const targetDate = dropZone.dataset.date;
         const updatedData = { ...task };
         delete updatedData.id;
         delete updatedData.historyId;
+        const oldDate = updatedData.scheduledDate;
 
         updatedData.scheduledDate =
           targetDate === "unscheduled" ? null : targetDate;
 
-        if (task.scheduledDate !== updatedData.scheduledDate) {
+        if (oldDate !== updatedData.scheduledDate) {
           updateTask(taskId, updatedData);
-          navigateToDate(currentViewDate); // Re-render
+          // navigateToDate(currentViewDate) called within updateTask now
         }
+      } else {
+        console.error(`Task data not found for touch-dropped ID: ${taskId}`);
       }
     }
 
-    // Clean up styles and placeholder
+    // Cleanup
     draggedElement.classList.remove("dragging");
     // draggedElement.style.opacity = '1';
-    if (placeholder) {
-      placeholder.remove();
-      placeholder = null;
-    }
-
     draggedElement = null;
     draggedTaskId = null;
+    isDragging = false;
     document
       .querySelectorAll(".drop-zone")
       .forEach((zone) => zone.classList.remove("drag-over"));
@@ -770,28 +810,28 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTimePerSubject(activeTasks);
     renderFocusChart(activeTasks);
     renderUpcomingTasks(activeTasks);
-    // Weekly summary is user-driven, just ensure fields are present
   }
 
   function renderTimePerSubject(tasks) {
     const timeMap = {};
-    DISCIPLINES.forEach((cat) => (timeMap[cat] = 0)); // Initialize all categories
+    DISCIPLINES.forEach((cat) => (timeMap[cat] = 0));
 
     tasks.forEach((task) => {
       if (task.category && task.estTime > 0) {
-        if (!timeMap[task.category]) timeMap[task.category] = 0; // Handle 'Other' or new categories
+        if (!timeMap[task.category]) timeMap[task.category] = 0;
         timeMap[task.category] += task.estTime;
       }
     });
 
     timePerSubjectUl.innerHTML = "";
-    subjectProgressBarsDiv.innerHTML = ""; // Clear progress bars
-    let totalEstTime = 0;
-    Object.values(timeMap).forEach((time) => (totalEstTime += time));
+    subjectProgressBarsDiv.innerHTML = "";
+    let totalEstTime = Object.values(timeMap).reduce(
+      (sum, time) => sum + time,
+      0
+    );
 
     Object.entries(timeMap).forEach(([category, time]) => {
       if (time > 0) {
-        // Only show categories with time > 0
         const li = document.createElement("li");
         const hours = Math.floor(time / 60);
         const minutes = time % 60;
@@ -800,19 +840,20 @@ document.addEventListener("DOMContentLoaded", () => {
         )}:</strong> ${hours}h ${minutes}m`;
         timePerSubjectUl.appendChild(li);
 
-        // Optional: Add Progress Bar
         const percentage =
           totalEstTime > 0 ? ((time / totalEstTime) * 100).toFixed(1) : 0;
         const barContainer = document.createElement("div");
         barContainer.classList.add("progress-bar-container");
         barContainer.innerHTML = `
-                    <span class="progress-bar-label">${escapeHTML(
-                      category
-                    )} (${percentage}%)</span>
-                    <div class="progress-bar">
-                        <div class="progress-bar-fill" style="width: ${percentage}%;">${hours}h ${minutes}m</div>
-                    </div>
-                `;
+                  <span class="progress-bar-label">${escapeHTML(
+                    category
+                  )} (${percentage}%)</span>
+                  <div class="progress-bar">
+                      <div class="progress-bar-fill" style="width: ${percentage}%;">${
+          percentage > 10 ? `${hours}h ${minutes}m` : ""
+        }</div>
+                  </div>
+              `; // Only show text if bar is wide enough
         subjectProgressBarsDiv.appendChild(barContainer);
       }
     });
@@ -823,15 +864,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderFocusChart(tasks) {
     const focusCounts = { deep: 0, medium: 0, shallow: 0, unknown: 0 };
-    let totalTasksWithFocus = 0;
+    let totalValidTasks = 0; // Count tasks where focus level could be determined
 
     tasks.forEach((task) => {
-      if (task.focus === "deep") focusCounts.deep++;
-      else if (task.focus === "medium") focusCounts.medium++;
-      else if (task.focus === "shallow") focusCounts.shallow++;
-      else focusCounts.unknown++; // Count tasks without a focus level
-
-      if (task.focus) totalTasksWithFocus++;
+      if (
+        task.focus === "deep" ||
+        task.focus === "medium" ||
+        task.focus === "shallow"
+      ) {
+        focusCounts[task.focus]++;
+        totalValidTasks++;
+      } else {
+        focusCounts.unknown++;
+      }
     });
 
     const chartData = {
@@ -846,62 +891,84 @@ document.addEventListener("DOMContentLoaded", () => {
             focusCounts.unknown,
           ],
           backgroundColor: [
-            "rgba(231, 76, 60, 0.7)", // Red (Deep)
-            "rgba(241, 196, 15, 0.7)", // Yellow (Medium)
-            "rgba(52, 152, 219, 0.7)", // Blue (Shallow)
-            "rgba(149, 165, 166, 0.5)", // Gray (Unknown)
+            /* Colors... */
           ],
           borderColor: [
-            "rgba(192, 57, 43, 1)",
-            "rgba(194, 150, 10, 1)",
-            "rgba(41, 128, 185, 1)",
-            "rgba(127, 140, 141, 1)",
+            /* Border colors... */
           ],
           borderWidth: 1,
         },
       ],
     };
+    // Re-add colors if they were removed accidentally
+    chartData.datasets[0].backgroundColor = [
+      "rgba(231, 76, 60, 0.7)",
+      "rgba(241, 196, 15, 0.7)",
+      "rgba(52, 152, 219, 0.7)",
+      "rgba(149, 165, 166, 0.5)",
+    ];
+    chartData.datasets[0].borderColor = [
+      "rgba(192, 57, 43, 1)",
+      "rgba(194, 150, 10, 1)",
+      "rgba(41, 128, 185, 1)",
+      "rgba(127, 140, 141, 1)",
+    ];
 
     const ctx = focusChartCanvas.getContext("2d");
 
-    if (focusChartInstance) {
-      focusChartInstance.data = chartData; // Update data
-      focusChartInstance.update();
-    } else if (totalTasksWithFocus > 0 || focusCounts.unknown > 0) {
-      // Only create chart if there's data
-      focusChartInstance = new Chart(ctx, {
-        type: "pie", // Or 'doughnut' or 'bar'
-        data: chartData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false, // Allow chart to fill container better
-          plugins: {
-            legend: {
-              position: "top",
-            },
-            tooltip: {
-              callbacks: {
-                label: function (context) {
-                  let label = context.label || "";
-                  if (label) {
-                    label += ": ";
-                  }
-                  if (context.parsed !== null) {
-                    label += context.parsed + " tasks";
-                  }
-                  return label;
-                },
+    try {
+      // --- Wrap in try-catch ---
+      if (focusChartInstance) {
+        // Only update if data actually exists to prevent errors
+        if (totalValidTasks > 0 || focusCounts.unknown > 0) {
+          focusChartInstance.data = chartData;
+          focusChartInstance.update();
+          console.log("Mobile Debug: Focus chart updated."); // DEBUG
+        } else {
+          // Optional: Clear chart if no data? Or leave as is?
+          console.log("Mobile Debug: No data to update chart.");
+        }
+      } else if (totalValidTasks > 0 || focusCounts.unknown > 0) {
+        // Check if there is *any* data
+        console.log(
+          "Mobile Debug: Creating new focus chart. Data:",
+          JSON.stringify(chartData)
+        ); // DEBUG
+        focusChartInstance = new Chart(ctx, {
+          type: "pie",
+          data: chartData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false, // Important
+            plugins: {
+              legend: { position: "top" },
+              tooltip: {
+                /* callbacks */
               },
             },
           },
-        },
-      });
-    } else {
-      // Optional: Display a message if no data
+        });
+      } else {
+        ctx.clearRect(0, 0, focusChartCanvas.width, focusChartCanvas.height);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle"; // Center vertically
+        ctx.fillText(
+          "No focus data available.",
+          focusChartCanvas.width / 2,
+          focusChartCanvas.height / 2
+        );
+        console.log("Mobile Debug: No focus data for chart."); // DEBUG
+      }
+    } catch (error) {
+      // --- Catch errors ---
+      console.error("Mobile Debug: Error rendering focus chart:", error);
+      // Optionally display error message on canvas
       ctx.clearRect(0, 0, focusChartCanvas.width, focusChartCanvas.height);
       ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "red";
       ctx.fillText(
-        "No focus data available.",
+        "Chart Error.",
         focusChartCanvas.width / 2,
         focusChartCanvas.height / 2
       );
@@ -916,13 +983,18 @@ document.addEventListener("DOMContentLoaded", () => {
     nextWeek.setDate(today.getDate() + 7);
 
     const upcoming = tasks
-      .filter((task) => task.scheduledDate) // Must have a scheduled date
+      .filter((task) => task.scheduledDate && isValidDate(task.scheduledDate)) // Ensure valid date
       .map((task) => ({
         ...task,
         dateObj: new Date(task.scheduledDate + "T00:00:00"),
-      })) // Add Date object for sorting/filtering
-      .filter((task) => task.dateObj >= today && task.dateObj < nextWeek) // Filter for next 7 days
-      .sort((a, b) => a.dateObj - b.dateObj); // Sort by date
+      }))
+      .filter(
+        (task) =>
+          !isNaN(task.dateObj) &&
+          task.dateObj >= today &&
+          task.dateObj < nextWeek
+      ) // Check valid & in range
+      .sort((a, b) => a.dateObj - b.dateObj);
 
     if (upcoming.length === 0) {
       upcomingTasksUl.innerHTML =
@@ -932,12 +1004,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     upcoming.forEach((task) => {
       const li = document.createElement("li");
+      // Use safe date formatting here too
+      let formattedDueDate = formatDate(task.dateObj);
+      if (formattedDueDate === "Invalid Date")
+        formattedDueDate = task.scheduledDate; // Fallback
+
       li.innerHTML = `<strong>${escapeHTML(
         task.title
-      )}</strong> - Due: ${formatDate(task.dateObj)} (${escapeHTML(
-        task.category
-      )})`;
-      // Optional: Add click handler to view/edit task
+      )}</strong> - Due: ${formattedDueDate} (${escapeHTML(task.category)})`;
       li.style.cursor = "pointer";
       li.addEventListener("click", () => openModalForEdit(task.id));
       upcomingTasksUl.appendChild(li);
@@ -951,7 +1025,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!well && !blockers && !next) {
       generatedSummaryOutput.textContent =
-        "Please fill in at least one section to generate the summary.";
+        "Please fill in at least one section.";
       return;
     }
 
@@ -965,12 +1039,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (next) summary += `**Next Steps:**\n- ${next.replace(/\n/g, "\n- ")}\n`;
 
     generatedSummaryOutput.textContent = summary;
-    // Optional: Add a "Copy to Clipboard" button here
   }
 
   // --- Export Functions ---
   function exportToJson() {
-    const dataStr = JSON.stringify(tasks, null, 2); // Pretty print JSON
+    // Export only the tasks array structure
+    const dataStr = JSON.stringify(tasks, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -983,13 +1057,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function exportToCsv() {
-    // Use flattened history for a more detailed CSV
     const flatHistory = getAllTaskHistory();
     if (flatHistory.length === 0) {
       alert("No task data to export.");
       return;
     }
-
     const headers = [
       "TaskId",
       "HistoryIndex",
@@ -998,12 +1070,11 @@ document.addEventListener("DOMContentLoaded", () => {
       "Title",
       "Category",
       "Description",
-      "EstTime (min)",
+      "EstTime(min)",
       "ScheduledDate",
       "Priority",
       "Focus",
     ];
-    // Map data to CSV rows
     const rows = flatHistory.map((entry) => {
       const action = entry.deleted
         ? "Deleted"
@@ -1013,20 +1084,18 @@ document.addEventListener("DOMContentLoaded", () => {
       return [
         entry.taskId,
         entry.historyIndex,
-        new Date(entry.timestamp).toISOString(), // Use ISO format for consistency
+        new Date(entry.timestamp).toISOString(),
         action,
-        `"${escapeCsvField(entry.title || "")}"`, // Quote fields that might contain commas or newlines
-        `"${escapeCsvField(entry.category || "")}"`,
-        `"${escapeCsvField(entry.description || "")}"`,
+        escapeCsvField(entry.title),
+        escapeCsvField(entry.category),
+        escapeCsvField(entry.description),
         entry.estTime || "",
         entry.scheduledDate || "",
         entry.priority || "",
         entry.focus || "",
-      ].join(","); // Join fields with commas
+      ].join(",");
     });
-
-    const csvContent = [headers.join(","), ...rows].join("\n"); // Join header and rows with newlines
-
+    const csvContent = [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1038,11 +1107,10 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   }
 
-  // Helper to escape CSV fields containing commas or quotes
   function escapeCsvField(field) {
-    if (field === null || field === undefined) return "";
-    // Replace quotes with double quotes and wrap in quotes if it contains comma, quote, or newline
-    let escaped = String(field).replace(/"/g, '""');
+    const stringField = String(field || ""); // Ensure it's a string, handle null/undefined
+    // Replace quote with double quote, then wrap if necessary
+    let escaped = stringField.replace(/"/g, '""');
     if (
       escaped.includes(",") ||
       escaped.includes('"') ||
@@ -1065,13 +1133,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function isValidDate(dateString) {
-    // Basic check for YYYY-MM-DD format and valid date components
+    // Checks YYYY-MM-DD format and validates the date components
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return false;
-    const date = new Date(dateString + "T00:00:00"); // Use T00:00:00 to avoid timezone issues converting *back* to string
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
-    return `${year}-${month}-${day}` === dateString && !isNaN(date.getTime());
+    const date = new Date(dateString + "T00:00:00Z"); // Use UTC to avoid timezone shift issues during validation
+    // Check if the components match after Date object creation
+    const year = date.getUTCFullYear();
+    const month = (date.getUTCMonth() + 1).toString().padStart(2, "0");
+    const day = date.getUTCDate().toString().padStart(2, "0");
+    // Check if parsing resulted in a valid date and components match string
+    return !isNaN(date.getTime()) && `${year}-${month}-${day}` === dateString;
   }
 
   // --- Event Listeners Setup ---
@@ -1085,21 +1155,19 @@ document.addEventListener("DOMContentLoaded", () => {
       if (
         taskId &&
         confirm(
-          "Are you sure you want to delete this task? This action cannot be undone, but history will be kept."
+          "Are you sure you want to delete this task? History will be kept."
         )
       ) {
         deleteTask(taskId);
       }
     });
 
-    // Modal close on outside click
     window.addEventListener("click", (event) => {
       if (event.target === taskModal) {
         closeModal();
       }
     });
 
-    // Scheduler Navigation
     prevDayBtn.addEventListener("click", () => {
       const prevDate = new Date(currentViewDate);
       prevDate.setDate(currentViewDate.getDate() - 1);
@@ -1111,21 +1179,19 @@ document.addEventListener("DOMContentLoaded", () => {
       navigateToDate(nextDate);
     });
     todayBtn.addEventListener("click", () => {
-      navigateToDate(new Date()); // Navigate back to today
+      navigateToDate(new Date());
     });
 
-    // Drop Zone Listeners
     const dropZones = document.querySelectorAll(".drop-zone");
     dropZones.forEach((zone) => {
       zone.addEventListener("dragover", handleDragOver);
       zone.addEventListener("dragleave", handleDragLeave);
       zone.addEventListener("drop", handleDrop);
-      // Add touch listeners to drop zones as well (needed for elementFromPoint detection)
-      zone.addEventListener("touchmove", handleTouchMove, { passive: false }); // Can potentially detect entering zone here
+      // Touch listeners for drop zones
+      zone.addEventListener("touchmove", handleTouchMove, { passive: false });
       zone.addEventListener("touchend", handleTouchEnd);
     });
 
-    // Sidebar Discipline Clicks -> Open modal with pre-filled category
     disciplineList.addEventListener("click", (e) => {
       const listItem = e.target.closest("li");
       if (listItem && listItem.dataset.category) {
@@ -1133,7 +1199,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Dashboard Actions
     generateSummaryBtn.addEventListener("click", generateWeeklySummary);
     exportJsonBtn.addEventListener("click", exportToJson);
     exportCsvBtn.addEventListener("click", exportToCsv);
