@@ -1,277 +1,312 @@
-/* Basic Reset & Defaults */
+/* ======================================== */
+/* Base & Reset Styles            */
+/* ======================================== */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  /* Smoother scrolling on touch devices */
-  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scrolling: touch; /* Momentum scroll */
 }
 
 html,
 body {
-  /* Use 100% height for robust viewport filling */
-  height: 100%;
-  width: 100%; /* Prevent horizontal overflow */
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-  line-height: 1.6;
-  background-color: #f4f7f9;
-  color: #333;
-  /* Prevent body scroll, especially needed for mobile fixed layouts */
-  overflow: hidden;
-}
-
-/* Layout */
-.app-container {
-  display: flex;
-  /* Use height 100% to fill body */
   height: 100%;
   width: 100%;
-  overflow: hidden; /* Container itself does not scroll */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
+  line-height: 1.6;
+  font-size: 16px;
+  background-color: #f7f8fc;
+  color: #333;
+  /* Prevent body scrolling ONLY ON MOBILE LATER */
+  /* overflow: hidden; <- REMOVE FROM HERE */
+}
+
+/* ======================================== */
+/* Main App Layout (Desktop Default) */
+/* ======================================== */
+.app-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background-color: #f7f8fc;
+  /* Allow container itself to handle overflow if needed on desktop */
+  /* overflow: hidden; <- REMOVE FROM HERE */
 }
 
 .sidebar {
   width: 280px;
+  flex-shrink: 0;
   background-color: #ffffff;
+  border-right: 1px solid #e4e7eb;
   padding: 20px;
-  border-right: 1px solid #e0e0e0;
-  display: flex;
+  display: flex; /* Keep for desktop */
   flex-direction: column;
-  overflow-y: auto; /* Allow sidebar scrolling if needed */
-  flex-shrink: 0; /* Prevent sidebar from shrinking */
-  transition: width 0.2s ease-in-out; /* Add transition for width changes */
+  overflow-y: auto;
+  transition: width 0.3s ease, transform 0.3s ease; /* Add transform */
 }
 
 .main-content {
   flex-grow: 1;
-  padding: 20px;
-  overflow-y: auto; /* Allow main content scrolling */
-  display: flex;
+  padding: 24px;
+  overflow-y: auto; /* Desktop main scroll */
+  display: flex; /* Keep for desktop content alignment */
   flex-direction: column;
-  gap: 20px; /* Space between sections */
-  min-width: 0; /* Prevent flexbox overflow issues */
+  gap: 24px;
+  min-width: 0;
 }
 
-/* Card Style */
+/* --- Desktop uses panels directly --- */
+.tab-panel {
+  display: block; /* Show all panels on desktop by default */
+}
+
+/* Hide Mobile Elements on Desktop */
+.mobile-tabs {
+  display: none;
+}
+.fab {
+  display: none;
+}
+#create-task-btn-desktop {
+  display: inline-flex;
+} /* Show desktop button */
+
+/* ======================================== */
+/* Reusable Components & General Styles */
+/* ======================================== */
+/* Card, Btn, Headings, Inputs - Keep styles from previous good version */
 .card {
   background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   padding: 20px;
-  flex-shrink: 0; /* Prevent cards shrinking in flex */
+  flex-shrink: 0;
+  margin-bottom: 15px; /* Add margin bottom */
+}
+.btn {
+  padding: 10px 18px;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #333;
+  background-color: #ffffff;
+  min-height: 40px;
+  text-align: center;
+  white-space: nowrap;
+}
+.btn:hover {
+  border-color: #c0c4cc;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-primary {
+  background-color: #4a90e2;
+  color: white;
+  border-color: #4a90e2;
+}
+.btn-primary:hover {
+  background-color: #357abd;
+  border-color: #357abd;
+}
+.btn-danger {
+  background-color: #e94e77;
+  color: white;
+  border-color: #e94e77;
+}
+.btn-danger:hover {
+  background-color: #d63060;
+  border-color: #d63060;
+}
+h2 {
+  font-size: 1.6em;
+  color: #2c3e50;
+  margin-bottom: 16px;
+}
+h3 {
+  font-size: 1.25em;
+  color: #34495e;
+  margin-bottom: 12px;
+}
+h4 {
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  color: #333;
+}
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  font-size: 1em;
+  min-height: 40px;
+  background-color: #fff;
+}
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #555;
+  font-size: 0.9em;
+}
+small {
+  font-size: 0.8em;
+  color: #777;
+  margin-top: 4px;
+  display: inline-block;
 }
 
-/* Sidebar Styles */
+/* ======================================== */
+/* Sidebar Specifics (Desktop)    */
+/* ======================================== */
+/* Keep desktop sidebar styles */
 .sidebar h2 {
-  margin-bottom: 15px;
-  color: #2c3e50;
-  font-size: 1.4em;
-  border-bottom: 2px solid #3498db;
-  padding-bottom: 5px;
-  flex-shrink: 0;
+  font-size: 1.5em;
+  border-bottom-width: 3px;
 }
 .sidebar h3 {
-  margin-top: 20px;
-  margin-bottom: 10px;
-  font-size: 1.1em;
-  color: #34495e;
-  flex-shrink: 0;
+  font-size: 1.15em;
+  margin-top: 24px;
 }
 .sidebar ul {
   list-style: none;
   margin-bottom: 20px;
 }
 .sidebar li {
-  padding: 8px 12px;
-  margin-bottom: 5px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  padding: 10px 14px;
+  margin-bottom: 6px;
+  border-radius: 6px;
 }
 .sidebar li:hover {
-  background-color: #ecf0f1;
+  background-color: #f0f4f8;
 }
-.sidebar li i {
-  color: #7f8c8d;
-  flex-shrink: 0; /* Prevent icon shrinking */
-}
-.sidebar #create-task-btn {
+.sidebar #create-task-btn-desktop {
   width: 100%;
-  margin-bottom: 15px;
-  flex-shrink: 0;
+  margin: 10px 0 20px 0;
 }
-
 .sidebar-section {
-  /* margin-top: auto; /* Removed: Caused issues on mobile */
   padding-top: 15px;
-  border-top: 1px solid #eee;
-  margin-top: 15px; /* Add margin for spacing */
-  flex-shrink: 0;
+  border-top: 1px solid #e4e7eb;
+  margin-top: 20px;
 }
 .sidebar-section:first-of-type {
-  margin-top: 0; /* No margin for first section */
+  margin-top: 0;
   border-top: none;
 }
 .sidebar-section h3 {
-  margin-top: 0; /* Reset heading margin */
+  margin-top: 0;
 }
 
-/* Buttons */
-.btn {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1em;
-  transition: all 0.2s ease; /* Smooth all transitions */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center; /* Center content */
-  gap: 8px;
-  text-decoration: none;
-  color: #333;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  min-height: 40px; /* Touch target size */
-  text-align: center;
-}
-.btn:hover {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  background-color: #e8e8e8;
-  border-color: #bbb; /* Slightly darker border on hover */
-}
-.btn:active {
-  transform: translateY(1px); /* Press effect */
-}
-.btn-primary {
-  background-color: #3498db;
-  color: white;
-  border-color: #2980b9;
-}
-.btn-primary:hover {
-  background-color: #2980b9;
-}
-.btn-danger {
-  background-color: #e74c3c;
-  color: white;
-  border-color: #c0392b;
-}
-.btn-danger:hover {
-  background-color: #c0392b;
-}
-
-/* Scheduler View */
-.scheduler-view h2,
-.scheduler-view h3 {
-  text-align: center;
-  margin-bottom: 15px;
-  color: #2c3e50;
-}
-.scheduler-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-#current-date-display {
-  font-weight: bold;
-  font-size: 1.3em;
-  flex-grow: 1; /* Allow date to take available space */
-  text-align: center; /* Center date text */
-}
-
-/* Timeline & Task Lists */
+/* ======================================== */
+/* Task & List Specifics          */
+/* ======================================== */
+/* Keep task/list styles */
 .timeline,
 .task-list {
-  min-height: 150px;
-  border: 1px dashed #bdc3c7;
-  border-radius: 5px;
+  min-height: 120px;
+  border: 1px dashed #ced4da;
+  border-radius: 8px;
   padding: 15px;
   background-color: #f8f9fa;
-  margin-top: 10px;
 }
-#unscheduled-tasks-list {
-  background-color: #fdfefe;
-}
+#unscheduled-tasks-list-sidebar,
+#unscheduled-tasks-list-mobile {
+  background-color: #e9ecef;
+} /* Apply bg to both */
 
-/* Task Items */
 .task {
   background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  /* More padding for better spacing, left adjusted for dot */
-  padding: 14px 14px 14px 28px;
-  margin-bottom: 12px; /* Increased margin */
-  border-radius: 6px;
-  cursor: grab;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.2s ease;
+  border: 1px solid #e4e7eb;
+  padding: 14px 14px 14px 30px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
   position: relative;
+  cursor: grab;
 }
 .task:active {
   cursor: grabbing;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
 }
 .task.dragging {
-  opacity: 0.6;
-  border-style: dashed; /* Use style instead of separate border */
-  border-color: #3498db;
+  opacity: 0.5;
+  border-style: dashed;
+  background: #eef;
 }
 .task h4 {
-  margin-bottom: 6px; /* Slightly more space */
-  font-size: 1.05em; /* Slightly smaller */
-  font-weight: 600; /* Bolder title */
+  font-size: 1.05em;
+  font-weight: 600;
+  margin-bottom: 6px;
 }
 .task p {
   font-size: 0.9em;
-  color: #555;
   margin-bottom: 4px;
+  color: #555;
   white-space: pre-wrap;
   word-break: break-word;
 }
 .task .task-meta {
   font-size: 0.8em;
   color: #777;
-  margin-top: 10px; /* More space before meta */
+  margin-top: 10px;
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 5px 10px; /* Row and column gap */
+  gap: 5px 10px;
 }
 .task .task-actions {
-  margin-top: 12px; /* More space before actions */
+  margin-top: 12px;
   display: flex;
-  gap: 8px; /* Increased gap */
-  flex-wrap: wrap; /* Allow actions to wrap */
+  gap: 10px;
+  flex-wrap: wrap;
 }
 .task .task-actions .btn {
-  padding: 4px 8px; /* Adjust padding */
-  font-size: 0.85em; /* Adjust size */
-  min-height: 30px; /* Minimum height */
+  padding: 5px 10px;
+  font-size: 0.85em;
+  min-height: 30px;
 }
 .task.overdue {
-  border-left: 5px solid #e74c3c;
-  background-color: #fdecea;
+  border-left: 6px solid #e94e77;
+  background-color: #fdebf0;
 }
-
-/* Priority Indicators */
 .task::before {
   content: "";
   position: absolute;
-  /* Position inside the left padding */
   left: 10px;
-  /* Adjust vertical alignment */
   top: 16px;
-  width: 10px; /* Slightly larger dot */
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background-color: #bdc3c7;
 }
-/* Colors remain the same */
 .task.priority-urgent-important::before {
   background-color: #e74c3c;
 }
@@ -284,14 +319,110 @@ body {
 .task.priority-not-urgent-not-important::before {
   background-color: #95a5a6;
 }
-
-/* Drop Zone Hover Effect */
 .drop-zone.drag-over {
-  background-color: #eafaf1;
-  border: 2px dashed #2ecc71;
+  background-color: #e6f7ff;
+  border: 2px dashed #4a90e2;
+}
+#task-history-list-sidebar .task,
+#task-history-list-mobile .task {
+  cursor: default;
+  background-color: #f1f3f5;
+  opacity: 0.9;
+  border-left-width: 4px;
+  border-color: #bdc3c7;
+}
+#task-history-list-sidebar .task::before,
+#task-history-list-mobile .task::before {
+  display: none;
+}
+#task-history-list-sidebar .task .task-actions,
+#task-history-list-mobile .task .task-actions {
+  display: none;
 }
 
-/* Modal Styles */
+/* ======================================== */
+/* Scheduler View Specifics       */
+/* ======================================== */
+.scheduler-view h2 {
+  margin-bottom: 10px;
+} /* Adjust margin */
+.scheduler-view h3 {
+  margin-bottom: 10px;
+  font-size: 1.1em;
+  color: #555;
+}
+.scheduler-controls {
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 15px;
+}
+#current-date-display {
+  font-size: 1.4em;
+}
+
+/* ======================================== */
+/* Dashboard Specifics            */
+/* ======================================== */
+/* Keep desktop dashboard styles */
+.dashboard-view h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+.dashboard-item {
+  padding: 18px;
+}
+.dashboard-item h3 {
+  font-size: 1.2em;
+}
+.chart-container {
+  min-height: 280px;
+  height: 320px;
+  max-height: 45vh;
+  position: relative;
+  width: 100%;
+}
+#focus-chart {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+.weekly-summary label {
+  margin-top: 10px;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+.weekly-summary textarea {
+  min-height: 70px;
+  font-size: 1em;
+}
+#generated-summary-output {
+  max-height: 180px;
+  overflow-y: auto;
+  background: #eee;
+  font-size: 0.85em;
+}
+.export-buttons {
+  margin-top: 24px;
+}
+.progress-bar {
+  height: 20px;
+  border-radius: 10px;
+}
+.progress-bar-fill {
+  border-radius: 10px;
+  line-height: 20px;
+  font-size: 0.85em;
+}
+
+/* ======================================== */
+/* Modal Specifics              */
+/* ======================================== */
+/* Keep modal styles */
 .modal {
   display: none;
   position: fixed;
@@ -300,102 +431,43 @@ body {
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto; /* Allow modal scroll if needed */
-  background-color: rgba(0, 0, 0, 0.55); /* Slightly darker overlay */
-  animation: fadeIn 0.3s ease;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.55);
 }
 .modal-content {
-  position: relative;
-  margin: 5vh auto; /* Use vh for vertical centering */
-  padding: 24px; /* Consistent padding */
+  margin: 5vh auto;
+  padding: 24px;
   width: 90%;
-  max-width: 550px; /* Slightly narrower max width */
-  background-color: #fff; /* Explicit background */
-  border-radius: 8px; /* Match card style */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
-  max-height: 90vh; /* Limit height */
-  overflow-y: auto; /* Allow content scroll */
+  max-width: 550px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease;
+  position: relative;
 }
 .close-btn {
   position: absolute;
-  top: 10px;
-  right: 15px;
+  top: 12px;
+  right: 18px;
   color: #aaa;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: bold;
   cursor: pointer;
-  line-height: 1; /* Ensure tight line height */
+  line-height: 1;
 }
-.close-btn:hover,
-.close-btn:focus {
+.close-btn:hover {
   color: black;
 }
-#task-form label {
-  display: block;
-  margin-top: 15px;
-  margin-bottom: 5px;
-  font-weight: 500; /* Medium weight labels */
-  color: #555;
-  font-size: 0.95em; /* Slightly larger */
-}
-#task-form input[type="text"],
-#task-form input[type="number"],
-#task-form input[type="date"],
-#task-form select,
-#task-form textarea {
-  width: 100%;
-  padding: 10px 12px; /* Consistent padding */
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1em;
-  min-height: 40px; /* Ensure touch target size */
-}
-#task-form input[type="text"]:focus, /* Add focus styles */
-#task-form input[type="number"]:focus,
-#task-form input[type="date"]:focus,
-#task-form select:focus,
-#task-form textarea:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-}
-#task-form textarea {
-  resize: vertical;
-  min-height: 70px; /* Minimum textarea height */
-}
-#task-form small {
-  font-size: 0.85em;
-  color: #777;
-  display: block;
-  margin-top: 2px; /* Reduced margin */
-  margin-bottom: 10px;
-}
 .priority-matrix {
-  display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(180px, 1fr)
-  ); /* Adjust minmax */
-  gap: 8px 12px; /* Row and column gap */
-  margin-bottom: 15px;
-  background-color: #f8f9fa;
-  padding: 12px; /* Increase padding */
-  border-radius: 4px;
-  border: 1px solid #eee;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  padding: 12px;
+  gap: 8px 12px;
 }
 .priority-matrix label {
-  display: flex;
-  align-items: center;
-  gap: 6px; /* Reduced gap */
-  margin: 0;
-  font-weight: normal;
-  font-size: 0.9em; /* Adjust size */
-  cursor: pointer; /* Make label clickable */
-}
-.priority-matrix input[type="radio"] {
-  width: auto;
-  margin-right: 4px; /* Space between radio and text */
-  flex-shrink: 0;
+  font-size: 0.9em;
+  gap: 6px;
 }
 .modal-buttons {
   margin-top: 25px;
@@ -409,167 +481,26 @@ body {
   padding-top: 15px;
   border-top: 1px solid #eee;
 }
-#task-history-view h3 {
-  margin-bottom: 10px;
-}
 #task-history-items {
-  list-style-type: none; /* Remove bullets */
-  padding-left: 0; /* Remove padding */
+  list-style-type: none;
+  padding-left: 0;
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #eee; /* Add border */
+  border: 1px solid #eee;
   border-radius: 4px;
 }
 #task-history-items li {
+  padding: 8px 12px;
   font-size: 0.9em;
-  margin-bottom: 0; /* Remove margin */
-  color: #555;
-  padding: 8px 10px; /* Add padding */
-  border-bottom: 1px solid #eee; /* Separator */
+  border-bottom: 1px solid #eee;
 }
 #task-history-items li:last-child {
-  border-bottom: none; /* No border on last item */
-}
-#task-history-items strong {
-  color: #333;
+  border-bottom: none;
 }
 
-/* Dashboard Styles */
-.dashboard-view h2 {
-  text-align: center;
-  margin-bottom: 20px;
-}
-.dashboard-grid {
-  display: grid;
-  /* Start with 1 column, adjust later */
-  grid-template-columns: 1fr;
-  gap: 20px;
-}
-.dashboard-item {
-  background-color: #fdfefe;
-  padding: 15px;
-  border-radius: 6px;
-  border: 1px solid #e8e8e8;
-  display: flex;
-  flex-direction: column;
-}
-.dashboard-item h3 {
-  margin-bottom: 10px;
-  color: #34495e;
-  font-size: 1.2em;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 5px;
-}
-.dashboard-item ul {
-  list-style: none;
-  padding-left: 5px;
-}
-.dashboard-item li {
-  margin-bottom: 5px;
-  font-size: 0.95em;
-}
-.dashboard-item li strong {
-  color: #2c3e50;
-}
-#time-per-subject li span {
-  font-weight: bold;
-}
-.chart-container {
-  position: relative;
-  min-height: 250px;
-  /* Ensure chart has space */
-  height: 300px; /* Explicit height */
-  max-height: 40vh; /* Limit relative height */
-}
-#focus-chart {
-  display: block; /* Fix potential inline issues */
-  max-width: 100%;
-  max-height: 100%; /* Respect container */
-}
-.weekly-summary label {
-  display: block;
-  margin-top: 10px;
-  margin-bottom: 3px;
-  font-weight: bold;
-  font-size: 0.9em;
-}
-.weekly-summary textarea {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 0.95em;
-  resize: vertical;
-  min-height: 60px;
-}
-.weekly-summary button {
-  margin-top: 10px;
-}
-#generated-summary-output {
-  margin-top: 15px;
-  background-color: #f0f0f0;
-  padding: 10px;
-  border-radius: 4px;
-  font-size: 0.9em;
-  white-space: pre-wrap;
-  border: 1px solid #ddd;
-  max-height: 150px; /* Limit height */
-  overflow-y: auto; /* Allow scroll */
-}
-.export-buttons {
-  margin-top: 20px;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
-  flex-wrap: wrap;
-}
-
-/* Progress Bars (Optional) */
-.progress-bar-container {
-  margin-bottom: 8px;
-}
-.progress-bar-label {
-  display: block;
-  font-size: 0.9em;
-  margin-bottom: 3px;
-}
-.progress-bar {
-  width: 100%;
-  height: 15px;
-  background-color: #e0e0e0;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.progress-bar-fill {
-  height: 100%;
-  background-color: #3498db;
-  border-radius: 8px 0 0 8px;
-  transition: width 0.5s ease-out;
-  text-align: right;
-  color: white;
-  font-size: 0.8em;
-  line-height: 15px;
-  padding-right: 5px;
-  white-space: nowrap;
-}
-
-/* Task History List in Sidebar */
-#task-history-list .task {
-  cursor: default;
-  background-color: #f9f9f9;
-  opacity: 0.8;
-  border-left: 3px solid #bdc3c7;
-}
-#task-history-list .task::before {
-  display: none;
-}
-#task-history-list .task .task-actions {
-  display: none;
-}
-
-/* Animation */
+/* ======================================== */
+/* Animations                   */
+/* ======================================== */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -588,152 +519,179 @@ body {
     opacity: 1;
   }
 }
-.modal-content {
-  animation: slideIn 0.3s ease forwards;
-}
 
-/* ============================================ */
-/* Responsive Adjustments                     */
-/* ============================================ */
-
-/* Medium Screens / Tablets (Portrait) / Small Laptops */
-@media (min-width: 769px) and (max-width: 1040px) {
-  .sidebar {
-    width: 230px; /* Narrower sidebar */
-  }
-  .main-content {
-    padding: 15px; /* Reduce padding */
-  }
-  .dashboard-grid {
-    /* Ensure at least 2 columns if possible, adjust minmax */
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 15px; /* Reduce gap */
-  }
-  #current-date-display {
-    font-size: 1.2em; /* Slightly smaller date */
-  }
-  .btn {
-    font-size: 0.95em; /* Slightly smaller buttons */
-    padding: 8px 12px;
-  }
-}
-
-/* Mobile Screens (Phones) */
+/* ======================================== */
+/* MOBILE TAB STYLES (max-width: 768px) */
+/* ======================================== */
 @media (max-width: 768px) {
   html,
   body {
-    font-size: 15px; /* Adjust base font */
-    /* Ensure hidden overflow */
-    overflow: hidden;
+    font-size: 15px;
+    overflow: hidden; /* Prevent scrolling of the body */
     height: 100%;
   }
 
   .app-container {
-    flex-direction: column; /* Stack layout */
-    height: 100%; /* Fill viewport */
-    overflow: hidden; /* Container does not scroll */
+    flex-direction: column; /* Force column */
+    height: 100%; /* Use full height */
+    overflow: hidden; /* Prevent container scroll */
+    position: relative; /* Needed for FAB positioning */
   }
 
+  /* --- Hide Desktop Elements --- */
   .sidebar {
-    width: 100%; /* Full width */
-    border-right: none;
-    border-bottom: 1px solid #e0e0e0;
-    /* Allow natural height up to a limit, then scroll */
-    height: auto;
-    max-height: 40vh; /* Limit height (adjust percentage if needed) */
-    overflow-y: auto; /* CRITICAL: Allow sidebar scroll */
-    flex-shrink: 0; /* CRITICAL: Prevent sidebar collapse */
-    padding: 12px 15px; /* Mobile padding */
+    display: none;
   }
-  /* Ensure sections stack normally */
-  .sidebar-section {
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid #eee;
-  }
-  .sidebar-section:first-of-type {
-    margin-top: 0;
-    border-top: none;
+  #create-task-btn-desktop {
+    display: none;
   }
 
+  /* --- Style Main Content Area for Tabs --- */
   .main-content {
-    flex-grow: 1; /* CRITICAL: Take remaining space */
-    overflow-y: auto; /* CRITICAL: Allow main content scroll */
-    min-height: 0; /* CRITICAL: Flexbox scroll fix */
-    padding: 15px;
-    width: 100%; /* Ensure full width */
-    gap: 15px; /* Reduce gap */
-  }
-
-  .card {
-    padding: 15px;
-  } /* Adjust card padding */
-
-  .scheduler-controls {
-    flex-direction: column; /* Stack controls */
-    align-items: stretch; /* Full width */
-    gap: 8px; /* Reduce gap */
-  }
-  .scheduler-controls .btn {
+    flex-grow: 1; /* Take available space */
+    padding: 15px; /* Mobile padding */
+    padding-bottom: 70px; /* Add padding at bottom to avoid overlap with fixed tab bar */
+    overflow-y: auto; /* Allow content within the ACTIVE panel to scroll */
+    min-height: 0; /* Flexbox fix */
     width: 100%;
-  } /* Full width buttons */
+    gap: 0; /* Remove gap as only one panel is visible */
+  }
+
+  /* --- Tab Panel Styling --- */
+  .tab-panel {
+    display: none; /* Hide all panels by default */
+    width: 100%;
+    animation: fadeIn 0.3s ease; /* Optional fade */
+  }
+  .tab-panel.active {
+    display: block; /* Show only the active panel */
+  }
+  /* Ensure cards within panels don't add extra margin */
+  .tab-panel > .card {
+    margin-bottom: 0;
+  }
+
+  /* --- Mobile Tab Bar --- */
+  .mobile-tabs {
+    display: flex; /* Use flexbox for tab distribution */
+    position: fixed; /* Fix to bottom */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 60px; /* Tab bar height */
+    background-color: #ffffff;
+    border-top: 1px solid #e0e0e0;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+    z-index: 900; /* Ensure it's above content but below modal */
+  }
+
+  .tab-button {
+    flex-grow: 1; /* Distribute space evenly */
+    flex-basis: 0; /* Allow equal shrinking/growing */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 5px 0;
+    font-size: 0.7em; /* Smaller text */
+    color: #7f8c8d; /* Default color */
+    cursor: pointer;
+    transition: color 0.2s ease;
+    line-height: 1.3;
+  }
+  .tab-button i {
+    font-size: 1.5em; /* Icon size */
+    margin-bottom: 3px;
+  }
+  .tab-button span {
+    display: block; /* Ensure span takes its own line */
+  }
+  .tab-button.active {
+    color: #3498db; /* Active color */
+  }
+  .tab-button:hover {
+    color: #5dade2; /* Hover color */
+  }
+
+  /* --- Floating Action Button (FAB) --- */
+  .fab {
+    display: flex; /* Show FAB on mobile */
+    position: fixed;
+    bottom: 75px; /* Position above tab bar */
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    background-color: #e94e77; /* Use accent color */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-size: 1.5em; /* Icon size */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 950; /* Above tab bar */
+    transition: transform 0.2s ease-out;
+  }
+  .fab:hover {
+    background-color: #d63060; /* Darker on hover */
+  }
+  .fab:active {
+    transform: scale(0.95); /* Press effect */
+  }
+
+  /* --- Adjustments within Mobile Panels --- */
+  .scheduler-controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+  } /* Keep row layout for controls */
+  .scheduler-controls .btn {
+    width: auto;
+    font-size: 0.85em;
+    padding: 6px 10px;
+  } /* Adjust button size */
   #current-date-display {
-    text-align: center;
-    margin: 10px 0;
-    font-size: 1.2em;
+    font-size: 1.15em;
   }
-
-  .timeline,
-  .task-list {
-    padding: 10px;
-    min-height: 100px;
-  }
-
-  .task {
-    padding: 12px 12px 12px 25px; /* Adjusted padding */
-    margin-bottom: 8px; /* Reduce margin */
-  }
-  .task::before {
-    left: 8px;
-    top: 15px;
-    width: 10px;
-    height: 10px;
-  } /* Adjust dot */
 
   .modal-content {
     width: 95%;
-    margin: 3vh auto; /* Vertical margin using vh */
+    max-height: 90vh;
     padding: 15px;
-    max-height: 94vh; /* Slightly more height */
-  }
-  .close-btn {
-    top: 8px;
-    right: 12px;
-  }
-
-  .priority-matrix {
-    grid-template-columns: 1fr;
-  } /* Stack priorities */
+  } /* Slightly smaller padding */
 
   .dashboard-grid {
     grid-template-columns: 1fr;
     gap: 15px;
-  } /* Single column */
-
-  .export-buttons,
-  .modal-buttons {
-    justify-content: center; /* Center buttons */
   }
-  .modal-buttons .btn,
-  .export-buttons .btn {
-    flex-grow: 1; /* Allow buttons to grow */
-    max-width: 180px; /* Limit button width */
-    font-size: 0.9em;
-  }
-
   .chart-container {
-    min-height: 240px;
-    height: 280px;
-    max-height: 40vh;
+    min-height: 220px;
+    height: 260px;
+    max-height: 35vh;
+  } /* Adjust chart mobile size */
+
+  /* Ensure task list inside panels are minimally sized */
+  .tab-panel .task-list {
+    min-height: 100px;
+  }
+  .tab-panel h2 {
+    font-size: 1.4em;
+    margin-bottom: 15px;
+  }
+  .tab-panel h3 {
+    font-size: 1.1em;
+    margin-bottom: 10px;
+  }
+
+  /* Ensure inputs are usable */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 16px; /* Set explicit size to prevent iOS zoom */
   }
 }
