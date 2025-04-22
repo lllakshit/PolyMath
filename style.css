@@ -637,3 +637,119 @@ body {
     padding-left: 20px; /* Make space for the dot */
   }
 }
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column; /* Stack sidebar and main content */
+    height: auto; /* Allow content to determine height */
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 100%; /* Full width */
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    height: auto; /* Adjust height */
+    max-height: 40vh; /* Limit initial height, allow scrolling */
+    overflow-y: auto;
+  }
+
+  .main-content {
+    padding: 15px; /* Reduce padding */
+  }
+
+  .scheduler-controls {
+    flex-direction: column; /* Stack controls vertically */
+    align-items: stretch; /* Make buttons full width */
+  }
+
+  #current-date-display {
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 10% auto; /* Adjust margin for smaller screens */
+    padding: 20px;
+  }
+
+  .priority-matrix {
+    grid-template-columns: 1fr; /* Stack priority options */
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr; /* Single column layout */
+  }
+
+  .export-buttons,
+  .modal-buttons {
+    justify-content: center; /* Center buttons */
+  }
+
+  .task::before {
+    left: 5px; /* Adjust priority dot position */
+  }
+
+  .task {
+    padding-left: 20px; /* Make space for the dot */
+  }
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    flex-direction: column; /* Stack sidebar and main content */
+    height: auto; /* Allow content to determine height */
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 100%; /* Full width */
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    height: auto; /* Adjust height */
+    max-height: 40vh; /* Limit initial height, allow scrolling */
+    overflow-y: auto;
+  }
+
+  .main-content {
+    padding: 15px; /* Reduce padding */
+  }
+
+  .scheduler-controls {
+    flex-direction: column; /* Stack controls vertically */
+    align-items: stretch; /* Make buttons full width */
+  }
+
+  #current-date-display {
+    text-align: center;
+    margin: 10px 0;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 10% auto; /* Adjust margin for smaller screens */
+    padding: 20px;
+  }
+
+  .priority-matrix {
+    grid-template-columns: 1fr; /* Stack priority options */
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr; /* Single column layout */
+  }
+
+  .export-buttons,
+  .modal-buttons {
+    justify-content: center; /* Center buttons */
+  }
+
+  .task::before {
+    left: 5px; /* Adjust priority dot position */
+  }
+
+  .task {
+    padding-left: 20px; /* Make space for the dot */
+  }
+}
