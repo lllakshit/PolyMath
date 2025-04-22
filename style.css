@@ -34,8 +34,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: var(--text-color);
   background-color: var(--background-color);
   line-height: 1.6;
@@ -170,7 +169,7 @@ button {
 .category-item {
   display: flex;
   align-items: center;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: var(--transition);
@@ -194,7 +193,7 @@ button {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  margin-right: 0.75rem;
+  margin-right: 0.5rem;
 }
 
 .task-templates {
@@ -244,8 +243,8 @@ button {
 .nav-btn {
   font-size: 1rem;
   color: var(--text-color);
-  width: 40px; /* Larger touch target */
-  height: 40px; /* Larger touch target */
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -264,7 +263,7 @@ button {
 }
 
 .view-btn {
-  padding: 0.5rem 0.75rem; /* Larger touch target */
+  padding: 0.25rem 0.75rem;
   border-radius: var(--border-radius);
   transition: var(--transition);
   min-height: 40px; /* Minimum touch target size */
@@ -289,7 +288,7 @@ button {
 }
 
 .time-slots {
-  width: 50px; /* Reduced width for mobile */
+  width: 40px; /* Reduced width for mobile */
   border-right: 1px solid var(--border-color);
   background-color: var(--card-bg);
   flex-shrink: 0; /* Prevent time slots from shrinking */
@@ -313,7 +312,7 @@ button {
   overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
-/* Task Cards - Fixed for better mobile display */
+/* Improved task card styling for better content display */
 .task-card {
   position: absolute;
   width: calc(100% - 1rem);
@@ -324,13 +323,10 @@ button {
   cursor: grab;
   transition: var(--transition);
   z-index: 1;
-  min-height: 60px; /* Minimum height for task cards */
-
-  /* Fix for task content overflow */
-  overflow-y: auto;
-  max-height: calc(
-    100% - 10px
-  ); /* Prevent tasks from overflowing their time slot */
+  overflow-y: auto; /* Allow scrolling for long content */
+  display: flex;
+  flex-direction: column;
+  min-height: 60px; /* Minimum height for visibility */
 }
 
 .task-card:hover,
@@ -358,6 +354,8 @@ button {
   font-size: 1rem;
   line-height: 1.2;
   word-break: break-word; /* Prevent long titles from overflowing */
+  flex: 1;
+  min-width: 0; /* Allow text to wrap */
 }
 
 .task-category {
@@ -367,25 +365,25 @@ button {
   color: white;
   margin-left: 0.5rem;
   white-space: nowrap;
-  margin-top: 0.25rem; /* Add space when wrapped */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .task-time {
   font-size: 0.75rem;
   color: var(--text-light);
-  display: block; /* Force to new line on small screens */
   margin-top: 0.25rem;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .task-description {
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   word-break: break-word; /* Prevent long words from overflowing */
+  flex: 1; /* Take available space */
+  overflow: visible !important; /* Override any overflow hidden */
+  display: block !important; /* Override webkit box display */
+  -webkit-line-clamp: unset !important; /* Remove line clamping */
+  -webkit-box-orient: unset !important;
 }
 
 .task-footer {
@@ -395,6 +393,7 @@ button {
   font-size: 0.75rem;
   flex-wrap: wrap; /* Allow wrapping on small screens */
   gap: 0.5rem; /* Add gap between wrapped items */
+  margin-top: auto; /* Push to bottom of card */
 }
 
 .task-priority {
@@ -449,7 +448,7 @@ button {
   border: 1px solid var(--primary-color);
 }
 
-/* Dashboard Panel - Fixed for mobile */
+/* Dashboard Panel */
 .dashboard-panel {
   width: 320px;
   background-color: var(--sidebar-bg);
@@ -490,7 +489,7 @@ button {
   border-radius: var(--border-radius);
   padding: 1rem;
   box-shadow: var(--shadow);
-  height: 250px; /* Fixed height for charts */
+  min-height: 200px; /* Ensure charts have minimum height */
 }
 
 .upcoming-tasks {
@@ -505,7 +504,7 @@ button {
 }
 
 .upcoming-task-item {
-  padding: 0.75rem 0.5rem;
+  padding: 0.5rem 0;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -566,11 +565,11 @@ button {
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .form-row {
@@ -589,15 +588,15 @@ button {
 }
 
 .focus-value {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: var(--primary-color);
   color: white;
   border-radius: 50%;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 /* Modal */
@@ -622,7 +621,7 @@ button {
 .modal-content {
   background-color: var(--card-bg);
   border-radius: var(--border-radius);
-  width: 95%;
+  width: 90%;
   max-width: 500px;
   max-height: 90vh;
   max-height: 90dvh; /* Dynamic viewport height for mobile */
@@ -644,7 +643,7 @@ button {
 }
 
 .close-btn {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   color: var(--text-light);
   transition: var(--transition);
   width: 44px;
@@ -686,8 +685,8 @@ button {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 60px;
-  height: 60px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background-color: var(--primary-color);
   color: white;
@@ -706,7 +705,7 @@ button {
   transform: scale(1.05);
 }
 
-/* Responsive Styles - Fixed for better mobile experience */
+/* Responsive Styles - Improved for better mobile experience */
 @media (max-width: 1024px) {
   .app-container {
     position: relative;
@@ -740,8 +739,8 @@ button {
     padding: 0.5rem;
     border-radius: 50%;
     box-shadow: var(--shadow);
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -778,8 +777,8 @@ button {
     padding: 0.5rem;
     border-radius: 50%;
     box-shadow: var(--shadow);
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -827,7 +826,7 @@ button {
     width: 95%;
   }
 
-  /* Fix for task cards on mobile */
+  /* Improved task card styling for mobile */
   .task-card {
     padding: 0.5rem;
     min-height: 50px; /* Smaller minimum height */
@@ -837,22 +836,54 @@ button {
     margin-bottom: 0.25rem;
   }
 
+  .task-title {
+    font-size: 0.9rem;
+  }
+
+  .task-category {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+  }
+
   .task-description {
+    font-size: 0.8rem;
     margin-bottom: 0.25rem;
-    -webkit-line-clamp: 1; /* Show only 1 line on mobile */
   }
 
   .task-footer {
-    font-size: 0.7rem; /* Smaller font size */
+    font-size: 0.7rem;
   }
 
   /* Form actions on mobile */
   .form-actions {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .form-actions .btn {
     width: 100%;
+  }
+
+  /* Mobile close buttons for sidebar and dashboard */
+  .mobile-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    color: var(--text-light);
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1101;
+  }
+
+  /* Ensure dashboard content is scrollable */
+  .dashboard-content {
+    padding-bottom: 2rem; /* Add padding at the bottom for better scrolling */
   }
 }
 
@@ -865,7 +896,7 @@ button {
     font-size: 0.7rem;
   }
 
-  /* Improved task card styling for very small screens */
+  /* Further optimized task card styling for very small screens */
   .task-card {
     padding: 0.4rem;
   }
@@ -881,7 +912,6 @@ button {
 
   .task-description {
     font-size: 0.75rem;
-    -webkit-line-clamp: 1;
   }
 
   .task-time {
@@ -895,7 +925,7 @@ button {
 
   /* Chart containers for small screens */
   .chart-container {
-    height: 200px;
+    min-height: 180px;
   }
 }
 
@@ -906,27 +936,37 @@ button {
   flex-direction: column !important;
 }
 
-/* Add a floating close button for mobile sidebars */
-.mobile-close-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 1.5rem;
-  color: var(--text-light);
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1101;
-  display: none;
+/* Ensure task container has proper minimum height */
+.task-container {
+  min-height: 960px; /* 16 hours * 60px per hour */
 }
 
+/* Ensure task cards align properly with time slots */
+.task-card[style*="top"] {
+  width: calc(100% - 1rem) !important; /* Ensure consistent width */
+}
+
+/* Fix for task description display */
+.task-description {
+  overflow: visible !important; /* Override any overflow hidden */
+  display: block !important; /* Override webkit box display */
+  -webkit-line-clamp: unset !important; /* Remove line clamping */
+  -webkit-box-orient: unset !important;
+}
+
+/* Ensure sidebar and dashboard are fully visible on mobile */
 @media (max-width: 768px) {
-  .mobile-close-btn {
-    display: flex;
+  .sidebar.show,
+  .dashboard-panel.show {
+    bottom: 0; /* Ensure they extend to the bottom of the screen */
+    overflow-y: auto; /* Make content scrollable */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
+
+  /* Prevent body scrolling when sidebar or dashboard is open */
+  body.sidebar-open,
+  body.dashboard-open {
+    overflow: hidden;
   }
 }
 
@@ -939,7 +979,7 @@ button {
   }
 
   .chart-container {
-    height: 180px;
+    min-height: 150px;
   }
 
   .form-group {
@@ -955,63 +995,4 @@ button {
   .task-card {
     max-height: 80%; /* Prevent tasks from being too tall in landscape */
   }
-}
-
-/* Add these styles at the end of your CSS file to fix task display and dashboard visibility */
-
-/* Fix for task cards to ensure they display properly */
-.task-card {
-  overflow-y: auto !important; /* Ensure content is scrollable if needed */
-  max-height: none !important; /* Allow natural height based on content */
-  height: auto !important; /* Override any fixed height */
-  min-height: 60px; /* Ensure minimum height for visibility */
-}
-
-.task-title {
-  word-break: break-word; /* Prevent long titles from overflowing */
-}
-
-.task-description {
-  overflow: visible; /* Allow description to be fully visible */
-  text-overflow: clip;
-  display: block; /* Override webkit box display */
-  -webkit-line-clamp: unset; /* Remove line clamping */
-  -webkit-box-orient: unset;
-  word-break: break-word; /* Prevent long words from overflowing */
-}
-
-/* Fix for dashboard panel on mobile */
-@media (max-width: 768px) {
-  .dashboard-panel {
-    width: 100%; /* Full width on mobile */
-    max-width: 320px; /* Maximum width */
-    z-index: 1001; /* Ensure it's above other elements */
-    overflow-y: auto; /* Ensure content is scrollable */
-  }
-
-  .dashboard-panel.show {
-    right: 0;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2); /* Add shadow for better visibility */
-  }
-
-  .dashboard-content {
-    padding-bottom: 2rem; /* Add padding at the bottom for better scrolling */
-  }
-
-  /* Ensure charts are visible */
-  .chart-container {
-    min-height: 200px;
-    margin-bottom: 1rem;
-  }
-}
-
-/* Fix for task container to ensure proper alignment with time slots */
-.task-container {
-  position: relative;
-  min-height: 960px; /* 16 hours * 60px per hour */
-}
-
-/* Ensure task cards align properly with time slots */
-.task-card[style*="top"] {
-  width: calc(100% - 1rem) !important; /* Ensure consistent width */
 }
