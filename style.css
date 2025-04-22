@@ -588,19 +588,7 @@ body {
   }
 
   .sidebar {
-    width: 240px; /* Slightly smaller sidebar */
-  }
-}
-
-@media (max-width: 768px) {
-  .app-container {
-    flex-direction: column; /* Stack sidebar and main content */
-    height: auto; /* Allow content to determine height */
-    min-height: 100vh;
-  }
-
-  .sidebar {
-    width: 100%; /* Full width */
+    width: 100%; /* Full width on mobile */
     border-right: none;
     border-bottom: 1px solid #e0e0e0;
     height: auto; /* Adjust height */
@@ -649,3 +637,39 @@ body {
     padding-left: 20px; /* Make space for the dot */
   }
 }
+@media (max-width: 576px) {
+  .sidebar {
+    padding: 10px; /* Reduce padding for mobile */
+  }
+
+  .main-content {
+    padding: 10px; /* Reduce padding for mobile */
+  }
+
+  .btn {
+    width: 100%; /* Full width buttons on mobile */
+    font-size: 0.9em;
+  }
+
+  .task {
+    font-size: 0.9em; /* Smaller font size for tasks */
+  }
+}
+@media (max-width: 400px) {
+  .sidebar {
+    padding: 5px; /* Further reduce padding for very small screens */
+  }
+
+  .main-content {
+    padding: 5px; /* Further reduce padding for very small screens */
+  }
+
+  .btn {
+    font-size: 0.8em; /* Smaller buttons on very small screens */
+  }
+
+  .task {
+    font-size: 0.85em; /* Even smaller font size for tasks */
+  }
+}
+/* End of CSS */
