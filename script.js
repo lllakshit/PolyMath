@@ -1,3 +1,4 @@
+import { Chart } from "@/components/ui/chart";
 document.addEventListener("DOMContentLoaded", () => {
   // --- DOM Elements ---
   const appContainer = document.querySelector(".app-container"); // Main container
@@ -78,9 +79,14 @@ document.addEventListener("DOMContentLoaded", () => {
   let focusChartInstance = null;
   let currentActiveTabSelector = "#tab-panel-schedule"; // Default active tab selector
   let isMobileView = window.innerWidth <= 768; // Initial check
+  let notificationPermissionGranted = false; // Track notification permission
+  let notificationCheckInterval = null; // Store the interval ID for notification checks
+  let notifiedTaskIds = new Set(); // Track which tasks have been notified
 
   // --- Constants ---
   const LOCAL_STORAGE_KEY = "learningTasksData";
+  const NOTIFICATION_SETTINGS_KEY = "taskNotificationSettings";
+  const NOTIFIED_TASKS_KEY = "notifiedTasks";
   const DISCIPLINES = [
     "AI/ML",
     "Quantum Computing",
@@ -91,17 +97,35 @@ document.addEventListener("DOMContentLoaded", () => {
     "Other",
   ]; // Keep in sync with HTML
 
+  // Default notification settings
+  const DEFAULT_NOTIFICATION_SETTINGS = {
+    enabled: true,
+    advanceTime: 30, // minutes before task is due
+    checkInterval: 1, // minutes between checks
+    showOnlyWorkingHours: false,
+    workingHoursStart: 9, // 9 AM
+    workingHoursEnd: 17, // 5 PM
+  };
+
+  // Current notification settings
+  let notificationSettings = { ...DEFAULT_NOTIFICATION_SETTINGS };
+
   // ========================================
   // Initialization
   // ========================================
   function init() {
     console.log("Initializing App...");
     loadTasks();
+    loadNotificationSettings();
+    loadNotifiedTasks();
     setupEventListeners();
     checkAndUpdateView(); // Initial render based on screen size
 
     // Initialize the current date display immediately
     navigateToDate(currentViewDate);
+
+    // Initialize notifications
+    initializeNotifications();
   }
 
   // Checks screen size and triggers appropriate UI rendering
@@ -132,6 +156,538 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // Note: renderSchedulerForDate and renderDashboard are called regardless
     // because their containers exist in both mobile panels and desktop main content.
+  }
+
+  // ========================================
+  // Notification System
+  // ========================================
+
+  // Initialize the notification system
+  function initializeNotifications() {
+    // Check if browser supports notifications
+    if (!("Notification" in window)) {
+      console.warn("This browser does not support desktop notifications");
+      return;
+    }
+
+    // Check if permission is already granted
+    if (Notification.permission === "granted") {
+      notificationPermissionGranted = true;
+      startNotificationSystem();
+    } else if (Notification.permission !== "denied") {
+      // We need to ask for permission
+      showNotificationPermissionBanner();
+    }
+  }
+
+  // Show a banner to request notification permission
+  function showNotificationPermissionBanner() {
+    // Create banner if it doesn't exist
+    if (!document.getElementById("notification-permission-banner")) {
+      const banner = document.createElement("div");
+      banner.id = "notification-permission-banner";
+      banner.className = "notification-banner";
+      banner.innerHTML = `
+        <div class="notification-banner-content">
+          <p><i class="fas fa-bell"></i> Enable notifications to get reminders about upcoming tasks</p>
+          <div class="notification-banner-actions">
+            <button id="enable-notifications-btn" class="btn btn-primary">Enable Notifications</button>
+            <button id="dismiss-notification-banner-btn" class="btn">Not Now</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(banner);
+
+      // Add event listeners
+      document
+        .getElementById("enable-notifications-btn")
+        .addEventListener("click", requestNotificationPermission);
+      document
+        .getElementById("dismiss-notification-banner-btn")
+        .addEventListener("click", () => {
+          banner.remove();
+        });
+
+      // Add banner styles if not already in CSS
+      if (!document.getElementById("notification-banner-styles")) {
+        const style = document.createElement("style");
+        style.id = "notification-banner-styles";
+        style.textContent = `
+          .notification-banner {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+            max-width: 500px;
+            margin: 0 auto;
+          }
+          .notification-banner-content {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+          .notification-banner-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+          }
+          @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          @media (max-width: 768px) {
+            .notification-banner {
+              bottom: 70px;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }
+
+  // Request notification permission
+  function requestNotificationPermission() {
+    Notification.requestPermission().then((permission) => {
+      if (permission === "granted") {
+        notificationPermissionGranted = true;
+        // Remove the banner if it exists
+        const banner = document.getElementById(
+          "notification-permission-banner"
+        );
+        if (banner) banner.remove();
+
+        // Show a confirmation notification
+        new Notification("Notifications Enabled", {
+          body: "You will now receive notifications for upcoming tasks.",
+          icon: "/favicon.ico", // Use your app's favicon or a custom icon
+        });
+
+        startNotificationSystem();
+      }
+    });
+  }
+
+  // Start the notification system
+  function startNotificationSystem() {
+    if (!notificationPermissionGranted || !notificationSettings.enabled) {
+      return;
+    }
+
+    // Clear any existing interval
+    if (notificationCheckInterval) {
+      clearInterval(notificationCheckInterval);
+    }
+
+    // Convert check interval from minutes to milliseconds
+    const checkIntervalMs = notificationSettings.checkInterval * 60 * 1000;
+
+    // Check immediately
+    checkForUpcomingTasks();
+
+    // Set up regular checks
+    notificationCheckInterval = setInterval(
+      checkForUpcomingTasks,
+      checkIntervalMs
+    );
+
+    console.log(
+      `Notification system started. Checking every ${notificationSettings.checkInterval} minute(s).`
+    );
+  }
+
+  // Stop the notification system
+  function stopNotificationSystem() {
+    if (notificationCheckInterval) {
+      clearInterval(notificationCheckInterval);
+      notificationCheckInterval = null;
+      console.log("Notification system stopped.");
+    }
+  }
+
+  // Check for upcoming tasks that need notifications
+  function checkForUpcomingTasks() {
+    if (!notificationPermissionGranted || !notificationSettings.enabled) {
+      return;
+    }
+
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    // Check if we should only notify during working hours
+    if (notificationSettings.showOnlyWorkingHours) {
+      if (
+        currentHour < notificationSettings.workingHoursStart ||
+        currentHour >= notificationSettings.workingHoursEnd
+      ) {
+        console.log("Outside of working hours, skipping notification check.");
+        return;
+      }
+    }
+
+    const activeTasks = getAllActiveTasks();
+    const advanceTimeMs = notificationSettings.advanceTime * 60 * 1000;
+
+    activeTasks.forEach((task) => {
+      // Skip if already notified for this task
+      if (notifiedTaskIds.has(task.id)) {
+        return;
+      }
+
+      // Skip if no scheduled date
+      if (!task.scheduledDate || !isValidDate(task.scheduledDate)) {
+        return;
+      }
+
+      // Calculate task due time (assuming start of day)
+      const taskDueDate = new Date(task.scheduledDate + "T00:00:00");
+
+      // Calculate notification time (task due time minus advance time)
+      const notificationTime = new Date(taskDueDate.getTime() - advanceTimeMs);
+
+      // Check if it's time to notify
+      if (now >= notificationTime && now < taskDueDate) {
+        sendTaskNotification(task, taskDueDate);
+        notifiedTaskIds.add(task.id);
+        saveNotifiedTasks();
+      }
+    });
+  }
+
+  // Send a notification for a task
+  function sendTaskNotification(task, dueDate) {
+    if (!notificationPermissionGranted) {
+      return;
+    }
+
+    // Format the due time for display
+    const dueTimeFormatted = formatDate(dueDate);
+
+    // Create notification
+    const notification = new Notification("Upcoming Task Reminder", {
+      body: `"${task.title}" is due ${dueTimeFormatted}`,
+      icon: "/favicon.ico", // Use your app's favicon or a custom icon
+      tag: `task-${task.id}`, // Prevents duplicate notifications
+      requireInteraction: true, // Notification persists until user interacts with it
+    });
+
+    // Handle notification click
+    notification.onclick = () => {
+      // Focus on the window and close the notification
+      window.focus();
+      notification.close();
+
+      // Open the task for editing
+      openModalForEdit(task.id);
+    };
+
+    console.log(`Notification sent for task: ${task.title}`);
+  }
+
+  // Reset notified tasks for a new day
+  function resetNotifiedTasksForNewDay() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastResetDate = localStorage.getItem("lastNotificationReset");
+
+    if (!lastResetDate || new Date(lastResetDate) < today) {
+      // Clear notified tasks for tasks due today or in the future
+      const activeTasks = getAllActiveTasks();
+
+      activeTasks.forEach((task) => {
+        if (task.scheduledDate) {
+          const taskDate = new Date(task.scheduledDate + "T00:00:00");
+
+          // If task is due today or in the future, remove from notified list
+          if (taskDate >= today) {
+            notifiedTaskIds.delete(task.id);
+          }
+        }
+      });
+
+      // Save the updated notified tasks
+      saveNotifiedTasks();
+
+      // Update the last reset date
+      localStorage.setItem("lastNotificationReset", today.toISOString());
+
+      console.log("Notified tasks reset for new day.");
+    }
+  }
+
+  // ========================================
+  // Notification Settings
+  // ========================================
+
+  // Load notification settings from localStorage
+  function loadNotificationSettings() {
+    try {
+      const savedSettings = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+      if (savedSettings) {
+        notificationSettings = {
+          ...DEFAULT_NOTIFICATION_SETTINGS,
+          ...JSON.parse(savedSettings),
+        };
+      }
+      console.log("Notification settings loaded:", notificationSettings);
+    } catch (e) {
+      console.error("Error loading notification settings:", e);
+      notificationSettings = { ...DEFAULT_NOTIFICATION_SETTINGS };
+    }
+  }
+
+  // Save notification settings to localStorage
+  function saveNotificationSettings() {
+    try {
+      localStorage.setItem(
+        NOTIFICATION_SETTINGS_KEY,
+        JSON.stringify(notificationSettings)
+      );
+      console.log("Notification settings saved.");
+    } catch (e) {
+      console.error("Error saving notification settings:", e);
+    }
+  }
+
+  // Load notified tasks from localStorage
+  function loadNotifiedTasks() {
+    try {
+      const savedNotifiedTasks = localStorage.getItem(NOTIFIED_TASKS_KEY);
+      if (savedNotifiedTasks) {
+        notifiedTaskIds = new Set(JSON.parse(savedNotifiedTasks));
+      }
+      console.log(`Loaded ${notifiedTaskIds.size} notified task IDs.`);
+
+      // Reset notified tasks if it's a new day
+      resetNotifiedTasksForNewDay();
+    } catch (e) {
+      console.error("Error loading notified tasks:", e);
+      notifiedTaskIds = new Set();
+    }
+  }
+
+  // Save notified tasks to localStorage
+  function saveNotifiedTasks() {
+    try {
+      localStorage.setItem(
+        NOTIFIED_TASKS_KEY,
+        JSON.stringify([...notifiedTaskIds])
+      );
+    } catch (e) {
+      console.error("Error saving notified tasks:", e);
+    }
+  }
+
+  // Open notification settings modal
+  function openNotificationSettingsModal() {
+    // Create modal if it doesn't exist
+    if (!document.getElementById("notification-settings-modal")) {
+      const modal = document.createElement("div");
+      modal.id = "notification-settings-modal";
+      modal.className = "modal";
+      modal.innerHTML = `
+        <div class="modal-content card">
+          <span class="close-btn">&times;</span>
+          <h2>Notification Settings</h2>
+          <form id="notification-settings-form">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="notification-enabled" ${
+                  notificationSettings.enabled ? "checked" : ""
+                }>
+                Enable task notifications
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label for="notification-advance-time">Notify me</label>
+              <select id="notification-advance-time">
+                <option value="15" ${
+                  notificationSettings.advanceTime === 15 ? "selected" : ""
+                }>15 minutes</option>
+                <option value="30" ${
+                  notificationSettings.advanceTime === 30 ? "selected" : ""
+                }>30 minutes</option>
+                <option value="60" ${
+                  notificationSettings.advanceTime === 60 ? "selected" : ""
+                }>1 hour</option>
+                <option value="120" ${
+                  notificationSettings.advanceTime === 120 ? "selected" : ""
+                }>2 hours</option>
+                <option value="1440" ${
+                  notificationSettings.advanceTime === 1440 ? "selected" : ""
+                }>1 day</option>
+              </select>
+              <label for="notification-advance-time">before task is due</label>
+            </div>
+
+            <div class="form-group">
+              <label for="notification-check-interval">Check for upcoming tasks every</label>
+              <select id="notification-check-interval">
+                <option value="1" ${
+                  notificationSettings.checkInterval === 1 ? "selected" : ""
+                }>1 minute</option>
+                <option value="5" ${
+                  notificationSettings.checkInterval === 5 ? "selected" : ""
+                }>5 minutes</option>
+                <option value="15" ${
+                  notificationSettings.checkInterval === 15 ? "selected" : ""
+                }>15 minutes</option>
+                <option value="30" ${
+                  notificationSettings.checkInterval === 30 ? "selected" : ""
+                }>30 minutes</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="notification-working-hours" ${
+                  notificationSettings.showOnlyWorkingHours ? "checked" : ""
+                }>
+                Only show notifications during working hours
+              </label>
+            </div>
+
+            <div id="working-hours-container" class="form-group" ${
+              !notificationSettings.showOnlyWorkingHours
+                ? 'style="display: none;"'
+                : ""
+            }>
+              <label for="working-hours-start">Working hours:</label>
+              <select id="working-hours-start">
+                ${generateHourOptions(notificationSettings.workingHoursStart)}
+              </select>
+              <span>to</span>
+              <select id="working-hours-end">
+                ${generateHourOptions(notificationSettings.workingHoursEnd)}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <button type="button" id="test-notification-btn" class="btn">
+                <i class="fas fa-bell"></i> Send Test Notification
+              </button>
+            </div>
+
+            <div class="modal-buttons">
+              <button type="submit" class="btn btn-primary">Save Settings</button>
+              <button type="button" class="btn cancel-btn">Cancel</button>
+            </div>
+          </form>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // Add event listeners
+      const closeBtn = modal.querySelector(".close-btn");
+      const cancelBtn = modal.querySelector(".cancel-btn");
+      const form = modal.querySelector("#notification-settings-form");
+      const testBtn = modal.querySelector("#test-notification-btn");
+      const workingHoursCheckbox = modal.querySelector(
+        "#notification-working-hours"
+      );
+      const workingHoursContainer = modal.querySelector(
+        "#working-hours-container"
+      );
+
+      closeBtn.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      cancelBtn.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      workingHoursCheckbox.addEventListener("change", () => {
+        workingHoursContainer.style.display = workingHoursCheckbox.checked
+          ? "block"
+          : "none";
+      });
+
+      testBtn.addEventListener("click", () => {
+        if (notificationPermissionGranted) {
+          const testNotification = new Notification("Test Notification", {
+            body: "This is a test notification from your Task Scheduler.",
+            icon: "/favicon.ico",
+          });
+        } else {
+          alert(
+            "Notification permission not granted. Please enable notifications first."
+          );
+          requestNotificationPermission();
+        }
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        // Update notification settings
+        notificationSettings.enabled = document.getElementById(
+          "notification-enabled"
+        ).checked;
+        notificationSettings.advanceTime = Number.parseInt(
+          document.getElementById("notification-advance-time").value
+        );
+        notificationSettings.checkInterval = Number.parseInt(
+          document.getElementById("notification-check-interval").value
+        );
+        notificationSettings.showOnlyWorkingHours = document.getElementById(
+          "notification-working-hours"
+        ).checked;
+        notificationSettings.workingHoursStart = Number.parseInt(
+          document.getElementById("working-hours-start").value
+        );
+        notificationSettings.workingHoursEnd = Number.parseInt(
+          document.getElementById("working-hours-end").value
+        );
+
+        // Save settings
+        saveNotificationSettings();
+
+        // Restart notification system with new settings
+        if (notificationSettings.enabled && notificationPermissionGranted) {
+          startNotificationSystem();
+        } else {
+          stopNotificationSystem();
+        }
+
+        // Close modal
+        modal.style.display = "none";
+      });
+
+      // Close modal when clicking outside
+      window.addEventListener("click", (event) => {
+        if (event.target === modal) {
+          modal.style.display = "none";
+        }
+      });
+    }
+
+    // Show the modal
+    document.getElementById("notification-settings-modal").style.display =
+      "block";
+  }
+
+  // Generate hour options for select elements
+  function generateHourOptions(selectedHour) {
+    let options = "";
+    for (let i = 0; i < 24; i++) {
+      const hour12 = i === 0 ? 12 : i > 12 ? i - 12 : i;
+      const ampm = i < 12 ? "AM" : "PM";
+      options += `<option value="${i}" ${
+        i === selectedHour ? "selected" : ""
+      }>${hour12} ${ampm}</option>`;
+    }
+    return options;
   }
 
   // ========================================
@@ -224,7 +780,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Gets the full history log, newest first
   function getAllTaskHistory() {
-    let flatHistory = [];
+    const flatHistory = [];
     tasks.forEach((task) => {
       if (task.history) {
         task.history.forEach((version, index) => {
@@ -310,6 +866,13 @@ document.addEventListener("DOMContentLoaded", () => {
       tasks[taskIndex].history = [];
     } // Ensure history array exists
     tasks[taskIndex].history.push(deletionRecord);
+
+    // Remove from notified tasks if present
+    if (notifiedTaskIds.has(taskId)) {
+      notifiedTaskIds.delete(taskId);
+      saveNotifiedTasks();
+    }
+
     saveTasks();
     renderUI(); // Refresh UI
     closeModal();
@@ -456,7 +1019,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     timePerSubjectUl.innerHTML = "";
     subjectProgressBarsDiv.innerHTML = "";
-    let totalEstTime = Object.values(timeMap).reduce(
+    const totalEstTime = Object.values(timeMap).reduce(
       (sum, time) => sum + time,
       0
     );
@@ -713,14 +1276,14 @@ document.addEventListener("DOMContentLoaded", () => {
     div.setAttribute("data-task-id", entry.taskId);
 
     // Determine the action type
-    let action = entry.deleted
+    const action = entry.deleted
       ? "Deleted"
       : entry.historyIndex === 0
       ? "Created"
       : "Updated";
 
     // Get title with fallback
-    let title = entry.title || "N/A";
+    const title = entry.title || "N/A";
 
     // Format date information
     let dateInfo = "";
@@ -809,7 +1372,7 @@ document.addEventListener("DOMContentLoaded", () => {
     [...task.history].reverse().forEach((version, index) => {
       const li = document.createElement("li");
       const timestamp = new Date(version.timestamp).toLocaleString();
-      let changeDesc = version.deleted
+      const changeDesc = version.deleted
         ? "Deleted"
         : index === task.history.length - 1
         ? "Created"
@@ -834,7 +1397,8 @@ document.addEventListener("DOMContentLoaded", () => {
       category: document.getElementById("task-category").value,
       description: document.getElementById("task-description").value.trim(),
       estTime:
-        parseInt(document.getElementById("task-est-time").value, 10) || null,
+        Number.parseInt(document.getElementById("task-est-time").value, 10) ||
+        null,
       scheduledDate:
         document.getElementById("task-scheduled-date").value || null,
       priority:
@@ -1260,9 +1824,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Ensure the date components match what was provided
     // This catches invalid dates like 2023-02-31
     const parts = dateString.split("-");
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
-    const day = parseInt(parts[2], 10);
+    const year = Number.parseInt(parts[0], 10);
+    const month = Number.parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+    const day = Number.parseInt(parts[2], 10);
 
     const reconstructedDate = new Date(year, month, day);
 
@@ -1354,6 +1918,9 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
+    // Add notification settings button to dashboard
+    addNotificationSettingsButton();
+
     // Resize Listener (Debounced)
     let resizeTimeout;
     window.addEventListener("resize", () => {
@@ -1361,19 +1928,36 @@ document.addEventListener("DOMContentLoaded", () => {
       resizeTimeout = setTimeout(checkAndUpdateView, 250); // Re-check view on resize
     });
 
+    // Check for new day to reset notifications
+    window.addEventListener("focus", resetNotifiedTasksForNewDay);
+
     console.log("Event listeners setup complete.");
+  }
+
+  // Add notification settings button to dashboard
+  function addNotificationSettingsButton() {
+    // Find the dashboard export buttons container
+    const exportButtonsContainer = document.querySelector(".export-buttons");
+
+    if (exportButtonsContainer) {
+      // Create notification settings button
+      const notificationSettingsBtn = document.createElement("button");
+      notificationSettingsBtn.id = "notification-settings-btn";
+      notificationSettingsBtn.className = "btn";
+      notificationSettingsBtn.innerHTML =
+        '<i class="fas fa-bell"></i> Notification Settings';
+
+      // Add event listener
+      notificationSettingsBtn.addEventListener(
+        "click",
+        openNotificationSettingsModal
+      );
+
+      // Add to container
+      exportButtonsContainer.appendChild(notificationSettingsBtn);
+    }
   }
 
   // --- Start the application ---
   init();
 }); // End DOMContentLoaded
-
-// Output the refactored script
-console.log("Script refactoring complete. Key improvements:");
-console.log("1. Fixed date formatting and validation");
-console.log(
-  "2. Ensured proper synchronization between currentDateDisplay and timelineDateSpan"
-);
-console.log("3. Improved date handling in task elements and upcoming tasks");
-console.log("4. Added initialization of date display on app startup");
-console.log("5. Enhanced error handling for date-related operations");

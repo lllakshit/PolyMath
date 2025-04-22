@@ -695,3 +695,76 @@ small {
     font-size: 16px; /* Set explicit size to prevent iOS zoom */
   }
 }
+/* Add these styles to your existing CSS file */
+
+/* Notification Banner */
+.notification-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideUp 0.3s ease;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.notification-banner-content {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notification-banner-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Notification Settings Modal */
+#notification-settings-modal .form-group {
+  margin-bottom: 15px;
+}
+
+#notification-settings-modal label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#notification-settings-modal select {
+  margin: 0 8px;
+}
+
+#working-hours-container {
+  margin-left: 25px;
+  padding: 10px;
+  border-left: 3px solid #eee;
+}
+
+#test-notification-btn {
+  margin-top: 10px;
+}
+
+/* Animation */
+@keyframes slideUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .notification-banner {
+    bottom: 70px; /* Position above the tab bar */
+  }
+}
