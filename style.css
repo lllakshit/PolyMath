@@ -956,3 +956,62 @@ button {
     max-height: 80%; /* Prevent tasks from being too tall in landscape */
   }
 }
+
+/* Add these styles at the end of your CSS file to fix task display and dashboard visibility */
+
+/* Fix for task cards to ensure they display properly */
+.task-card {
+  overflow-y: auto !important; /* Ensure content is scrollable if needed */
+  max-height: none !important; /* Allow natural height based on content */
+  height: auto !important; /* Override any fixed height */
+  min-height: 60px; /* Ensure minimum height for visibility */
+}
+
+.task-title {
+  word-break: break-word; /* Prevent long titles from overflowing */
+}
+
+.task-description {
+  overflow: visible; /* Allow description to be fully visible */
+  text-overflow: clip;
+  display: block; /* Override webkit box display */
+  -webkit-line-clamp: unset; /* Remove line clamping */
+  -webkit-box-orient: unset;
+  word-break: break-word; /* Prevent long words from overflowing */
+}
+
+/* Fix for dashboard panel on mobile */
+@media (max-width: 768px) {
+  .dashboard-panel {
+    width: 100%; /* Full width on mobile */
+    max-width: 320px; /* Maximum width */
+    z-index: 1001; /* Ensure it's above other elements */
+    overflow-y: auto; /* Ensure content is scrollable */
+  }
+
+  .dashboard-panel.show {
+    right: 0;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2); /* Add shadow for better visibility */
+  }
+
+  .dashboard-content {
+    padding-bottom: 2rem; /* Add padding at the bottom for better scrolling */
+  }
+
+  /* Ensure charts are visible */
+  .chart-container {
+    min-height: 200px;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Fix for task container to ensure proper alignment with time slots */
+.task-container {
+  position: relative;
+  min-height: 960px; /* 16 hours * 60px per hour */
+}
+
+/* Ensure task cards align properly with time slots */
+.task-card[style*="top"] {
+  width: calc(100% - 1rem) !important; /* Ensure consistent width */
+}
