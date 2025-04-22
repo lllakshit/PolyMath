@@ -1,24 +1,29 @@
+// First, let's analyze the issues in the original code
+console.log("Analyzing script.js issues...");
+
+// Issues identified:
+// 1. formatDate function has inconsistent handling of date objects
+// 2. currentDateDisplay and timelineDateSpan not properly synchronized
+// 3. Date validation could be improved
+// 4. Some date-related functionality might not be working correctly
+
+// Here's the refactored script.js file:
+
 document.addEventListener("DOMContentLoaded", () => {
   // --- DOM Elements ---
-  // (Assuming IDs from previous HTML are correct)
+  const appContainer = document.querySelector(".app-container"); // Main container
   const modal = document.getElementById("task-modal");
   const closeModalBtn = modal.querySelector(".close-btn");
   const cancelModalBtn = modal.querySelector(".cancel-btn");
   const taskForm = document.getElementById("task-form");
   const modalTitle = document.getElementById("modal-title");
   const taskIdInput = document.getElementById("task-id");
-  const taskTitleInput = document.getElementById("task-title"); // Specific reference for title
-  const taskCategorySelect = document.getElementById("task-category");
-  const taskDescriptionTextarea = document.getElementById("task-description");
-  const taskEstTimeInput = document.getElementById("task-est-time");
-  const taskScheduledDateInput = document.getElementById("task-scheduled-date");
-  const taskFocusSelect = document.getElementById("task-focus");
   const deleteTaskBtn = document.getElementById("delete-task-btn");
   const taskHistoryView = document.getElementById("task-history-view");
   const taskHistoryItemsUl = document.getElementById("task-history-items");
 
   // Desktop Specific
-  const sidebar = document.querySelector(".sidebar");
+  const sidebar = document.querySelector(".sidebar"); // Reference sidebar itself
   const createTaskBtnDesktop = document.getElementById(
     "create-task-btn-desktop"
   );
@@ -42,12 +47,14 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   // Shared / Panel Content Elements
-  const mainContent = document.querySelector(".main-content");
+  const mainContent = document.querySelector(".main-content"); // Container for panels on mobile
   const tabPanels = document.querySelectorAll(".tab-panel");
-  const schedulerPanel = document.getElementById("tab-panel-schedule"); // Needed? maybe not directly
-  const dashboardPanel = document.getElementById("tab-panel-dashboard"); // Needed? maybe not directly
+  const schedulerPanel = document.getElementById("tab-panel-schedule");
+  const dashboardPanel = document.getElementById("tab-panel-dashboard");
+  const unscheduledPanel = document.getElementById("tab-panel-unscheduled");
+  const historyPanel = document.getElementById("tab-panel-history");
 
-  // Scheduler Elements
+  // Scheduler Elements (inside schedule panel)
   const scheduledTasksList = document.getElementById("scheduled-tasks-list");
   const currentDateDisplay = document.getElementById("current-date-display");
   const timelineDateSpan = document.getElementById("timeline-date");
@@ -55,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const nextDayBtn = document.getElementById("next-day-btn");
   const todayBtn = document.getElementById("today-btn");
 
-  // Dashboard Elements
+  // Dashboard Elements (inside dashboard panel)
   const timePerSubjectUl = document.getElementById("time-per-subject");
   const subjectProgressBarsDiv = document.getElementById(
     "subject-progress-bars"
@@ -73,15 +80,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const exportCsvBtn = document.getElementById("export-csv-btn");
 
   // Combined Create Task Buttons
-  const createTaskBtns = document.querySelectorAll(".create-task-btn");
+  const createTaskBtns = document.querySelectorAll(".create-task-btn"); // FAB + Desktop Button
 
   // --- State ---
-  let tasks = [];
-  let currentViewDate = new Date(); // Use local time for view date
+  let tasks = []; // Array to hold all task objects { id: '...', history: [{...}, {...}] }
+  let currentViewDate = new Date(); // Date currently shown in the scheduler
   let draggedTaskId = null;
   let focusChartInstance = null;
-  let currentActiveTabSelector = "#tab-panel-schedule";
-  let isMobileView = window.innerWidth <= 768;
+  let currentActiveTabSelector = "#tab-panel-schedule"; // Default active tab selector
+  let isMobileView = window.innerWidth <= 768; // Initial check
 
   // --- Constants ---
   const LOCAL_STORAGE_KEY = "learningTasksData";
@@ -93,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "Content Creation",
     "Freelancing",
     "Other",
-  ];
+  ]; // Keep in sync with HTML
 
   // ========================================
   // Initialization
@@ -102,11 +109,15 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Initializing App...");
     loadTasks();
     setupEventListeners();
-    checkAndUpdateView(); // Initial render
+    checkAndUpdateView(); // Initial render based on screen size
+
+    // Initialize the current date display immediately
+    navigateToDate(currentViewDate);
   }
 
+  // Checks screen size and triggers appropriate UI rendering
   function checkAndUpdateView() {
-    isMobileView = window.innerWidth <= 768;
+    isMobileView = window.innerWidth <= 768; // Update view flag
     console.log("checkAndUpdateView - isMobileView:", isMobileView);
     renderUI();
   }
@@ -114,22 +125,24 @@ document.addEventListener("DOMContentLoaded", () => {
   // Main UI Rendering Orchestrator
   function renderUI() {
     console.log("renderUI called. Mobile:", isMobileView);
-    // Core content render calls
-    renderSchedulerForDate(currentViewDate); // Always render current schedule view
-    renderDashboard(); // Always render dashboard data
+    // Always render potentially visible components
+    renderSchedulerForDate(currentViewDate); // Render schedule content
+    renderDashboard(); // Render dashboard content
 
     if (isMobileView) {
-      activateTab(currentActiveTabSelector, false); // Activate tab without triggering recursive render
-      renderMobileUnscheduledTasks(); // Render mobile unscheduled list
-      renderMobileHistoryTasks(); // Render mobile history list
+      // Mobile specific rendering
+      activateTab(currentActiveTabSelector); // Ensure correct tab is shown
+      // Render content for *potentially* visible mobile tabs (even if not active immediately)
+      renderMobileUnscheduledTasks();
+      renderMobileHistoryTasks();
     } else {
+      // Desktop specific rendering
       // Ensure all panels are visible on desktop
-      tabPanels.forEach((panel) => {
-        if (panel) panel.style.display = "block";
-      });
-      renderDesktopSidebarLists(); // Render desktop sidebar lists
+      tabPanels.forEach((panel) => (panel.style.display = "block"));
+      renderDesktopSidebarLists();
     }
-    console.log("renderUI complete.");
+    // Note: renderSchedulerForDate and renderDashboard are called regardless
+    // because their containers exist in both mobile panels and desktop main content.
   }
 
   // ========================================
@@ -138,9 +151,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function saveTasks() {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
-      console.log(`Tasks saved. Count: ${tasks.length}`);
+      console.log("Tasks saved to localStorage.");
     } catch (e) {
-      console.error("Error saving tasks:", e); /* Alert omitted for brevity */
+      console.error("Error saving tasks to localStorage:", e);
+      alert("Could not save tasks. LocalStorage might be full or disabled.");
     }
   }
 
@@ -149,66 +163,107 @@ document.addEventListener("DOMContentLoaded", () => {
     if (storedTasks) {
       try {
         const parsedTasks = JSON.parse(storedTasks);
+        // Basic validation
         if (
           Array.isArray(parsedTasks) &&
           !parsedTasks.some((t) => !t || !t.id || !Array.isArray(t.history))
         ) {
           tasks = parsedTasks;
+          // Ensure history array exists if missing from old data (migration)
           tasks.forEach((task) => {
-            // Migration/Validation
-            task.id = task.id || generateUniqueId();
             if (!Array.isArray(task.history)) {
-              console.warn(`Task ${task.id} missing history, migrating.`);
+              console.warn(
+                `Task ${task.id} missing history array, attempting migration.`
+              );
+              // Assuming the object itself was the only history entry
               const taskData = { ...task };
-              delete taskData.id;
-              delete taskData.history;
-              task.history = [taskData];
+              delete taskData.id; // Don't store id within history array entry
+              delete taskData.history; // Remove circular ref
+              task.history = [taskData]; // Create history array
             }
           });
-          console.log(`Tasks loaded: ${tasks.length}`);
+          console.log("Tasks loaded from localStorage:", tasks.length);
         } else {
-          console.warn("Invalid task structure in localStorage. Resetting.");
+          console.warn(
+            "Invalid task structure found in localStorage. Resetting."
+          );
           tasks = [];
-          saveTasks();
+          saveTasks(); // Clear invalid storage
         }
       } catch (e) {
-        console.error("Error parsing tasks:", e);
-        tasks = [];
+        console.error("Error parsing tasks from localStorage:", e);
+        tasks = []; // Reset if parsing fails
       }
     } else {
-      tasks = [];
-      console.log("No tasks found in localStorage.");
+      tasks = []; // Initialize if nothing is stored
+      console.log("No tasks found in localStorage, initializing empty array.");
     }
+    // Ensure task IDs are present (migration)
+    tasks = tasks.map((task) => ({
+      id: task.id || generateUniqueId(), // Assign ID if missing
+      history: task.history || [], // Ensure history array exists
+    }));
   }
 
   // ========================================
   // Task Utility Functions
   // ========================================
   function generateUniqueId() {
-    /* ... keep as is ... */
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
   }
+
+  // Gets the latest non-deleted version of a task
   function getLatestTaskVersion(taskId) {
-    /* ... keep as is ... */
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || !task.history || task.history.length === 0) return null;
+    // Iterate backwards through history
+    for (let i = task.history.length - 1; i >= 0; i--) {
+      if (task.history[i] && !task.history[i].deleted) {
+        // Return a copy, adding the task ID and history index for reference
+        return { ...task.history[i], id: task.id, historyId: i };
+      }
+    }
+    return null; // All versions are deleted or history is malformed
   }
+
+  // Gets all currently active (not deleted) tasks
   function getAllActiveTasks() {
-    /* ... keep as is ... */
+    return tasks
+      .map((task) => getLatestTaskVersion(task.id))
+      .filter((task) => task !== null);
   }
+
+  // Gets the full history log, newest first
   function getAllTaskHistory() {
-    /* ... keep as is ... */
+    let flatHistory = [];
+    tasks.forEach((task) => {
+      if (task.history) {
+        task.history.forEach((version, index) => {
+          flatHistory.push({
+            taskId: task.id,
+            historyIndex: index,
+            timestamp: version.timestamp,
+            ...version, // Spread the rest of the version data
+          });
+        });
+      }
+    });
+    return flatHistory.sort((a, b) => b.timestamp - a.timestamp); // Sort newest first
   }
 
   // ========================================
   // Task CRUD Operations
   // ========================================
   function createTask(taskData) {
-    // Ensure essential data is present
-    if (!taskData || !taskData.title) {
-      console.error("Cannot create task: Missing data or title.");
-      return;
-    }
     const newTask = {
       id: generateUniqueId(),
-      history: [{ timestamp: Date.now(), ...taskData, deleted: false }],
+      history: [
+        {
+          timestamp: Date.now(),
+          ...taskData,
+          deleted: false,
+        },
+      ],
     };
     tasks.push(newTask);
     console.log(`Task created: ${newTask.id}, Title: ${taskData.title}`);
@@ -218,39 +273,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateTask(taskId, updatedData) {
-    // Ensure essential data is present
-    if (!updatedData || !updatedData.title) {
-      console.error(`Cannot update task ${taskId}: Missing data or title.`);
-      return;
-    }
     const taskIndex = tasks.findIndex((t) => t.id === taskId);
     if (taskIndex === -1) {
-      console.error("Update failed: Task not found:", taskId);
+      console.error("Task not found for update:", taskId);
       return;
     }
-    if (!tasks[taskIndex].history) tasks[taskIndex].history = []; // Ensure history array
-
+    // Ensure history exists before pushing
+    if (!tasks[taskIndex].history) {
+      tasks[taskIndex].history = [];
+    }
     tasks[taskIndex].history.push({
       timestamp: Date.now(),
       ...updatedData,
       deleted: false,
     });
-    console.log(`Task updated: ${taskId}, New Title: ${updatedData.title}`);
+    console.log(`Task updated: ${taskId}, Title: ${updatedData.title}`);
     saveTasks();
     renderUI(); // Refresh UI
     closeModal();
   }
 
   function deleteTask(taskId) {
-    if (!taskId) {
-      console.error("Delete failed: No taskId provided.");
-      return;
-    }
-    console.log(`Attempting to delete task: ${taskId}`); // Debug log
     const taskIndex = tasks.findIndex((t) => t.id === taskId);
     if (taskIndex === -1) {
-      console.error("Delete failed: Task not found:", taskId);
-      closeModal();
+      console.error("Task not found for deletion:", taskId);
       return;
     }
 
@@ -261,17 +307,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    console.log(`Attempting to delete task: ${taskId}`);
+
     const deletionRecord = {
       ...latestVersion,
       timestamp: Date.now(),
       deleted: true,
     };
-    delete deletionRecord.id;
+    delete deletionRecord.id; // Remove redundant fields before storing in history
     delete deletionRecord.historyId;
 
-    if (!tasks[taskIndex].history) tasks[taskIndex].history = [];
+    if (!tasks[taskIndex].history) {
+      tasks[taskIndex].history = [];
+    } // Ensure history array exists
     tasks[taskIndex].history.push(deletionRecord);
-    console.log(`Task marked as deleted: ${taskId}`);
     saveTasks();
     renderUI(); // Refresh UI
     closeModal();
@@ -283,42 +332,59 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Schedule Panel Rendering ---
   function navigateToDate(date) {
+    // Ensure date is valid before proceeding
     if (!(date instanceof Date) || isNaN(date.getTime())) {
-      date = new Date();
-    } // Default to today if invalid
+      console.error("Invalid date passed to navigateToDate:", date);
+      date = new Date(); // Default to today if invalid
+    }
+
+    // Create a new date object to avoid reference issues
     currentViewDate = new Date(date);
-    currentViewDate.setHours(0, 0, 0, 0); // Normalize
+    currentViewDate.setHours(0, 0, 0, 0);
+
+    // Format the date for display
     const formattedDate = formatDate(currentViewDate);
-    if (currentDateDisplay) currentDateDisplay.textContent = formattedDate;
-    if (timelineDateSpan) timelineDateSpan.textContent = formattedDate;
+
+    // Update both date displays to ensure consistency
+    if (currentDateDisplay) {
+      currentDateDisplay.textContent = formattedDate;
+    }
+
+    if (timelineDateSpan) {
+      timelineDateSpan.textContent = formattedDate;
+    }
+
     renderSchedulerForDate(currentViewDate);
   }
 
   function renderSchedulerForDate(date) {
-    if (!scheduledTasksList) return;
-    scheduledTasksList.innerHTML = ""; // Clear previous
+    if (!scheduledTasksList) {
+      console.error("Scheduled tasks list element not found.");
+      return;
+    }
+    scheduledTasksList.innerHTML = ""; // Clear current list
+
     const isoDateString = formatDateISO(date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const activeTasks = getAllActiveTasks();
-    console.log(
-      `Rendering schedule for: ${isoDateString}. Found ${activeTasks.length} active tasks.`
-    );
+
+    console.log(`Rendering schedule for date: ${isoDateString}`);
 
     activeTasks.forEach((task) => {
-      // Strict comparison using the standardized ISO date string
       if (task.scheduledDate === isoDateString) {
-        const taskElement = createTaskElement(task);
-        scheduledTasksList.appendChild(taskElement);
+        const taskElement = createTaskElement(task); // Create the element
+        scheduledTasksList.appendChild(taskElement); // Append it
+        // Add overdue class if needed
         if (
           task.scheduledDate &&
-          new Date(task.scheduledDate + "T00:00:00Z") < today
+          new Date(task.scheduledDate + "T00:00:00") < today
         ) {
-          // Use Z for UTC comparison consistency
           taskElement.classList.add("overdue");
         }
       }
     });
+    // Add drag listeners specifically to the tasks just rendered in this list
     addDragListenersToTasks(scheduledTasksList);
   }
 
@@ -329,183 +395,373 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSidebarUnscheduledTasks() {
-    if (!unscheduledTasksListSidebar) return;
+    if (!unscheduledTasksListSidebar) return; // Check if element exists
     unscheduledTasksListSidebar.innerHTML = "";
-    getAllActiveTasks()
-      .filter((task) => !task.scheduledDate)
-      .forEach((task) => {
-        unscheduledTasksListSidebar.appendChild(createTaskElement(task));
-      });
+    const activeTasks = getAllActiveTasks();
+    activeTasks.forEach((task) => {
+      if (!task.scheduledDate) {
+        const taskElement = createTaskElement(task);
+        unscheduledTasksListSidebar.appendChild(taskElement);
+      }
+    });
     addDragListenersToTasks(unscheduledTasksListSidebar);
   }
 
   function renderSidebarHistoryTasks() {
     if (!taskHistoryListSidebar) return;
     taskHistoryListSidebar.innerHTML = "";
-    getAllTaskHistory()
-      .slice(0, 15)
-      .forEach((entry) => {
-        taskHistoryListSidebar.appendChild(createHistoryElement(entry));
-      });
+    const recentHistory = getAllTaskHistory().slice(0, 15); // Show latest 15 changes
+    recentHistory.forEach((entry) => {
+      const div = createHistoryElement(entry);
+      taskHistoryListSidebar.appendChild(div);
+    });
   }
 
   // --- Mobile Tab Panel Rendering ---
   function renderMobileUnscheduledTasks() {
     if (!unscheduledTasksListMobile) return;
     unscheduledTasksListMobile.innerHTML = "";
-    const tasksToRender = getAllActiveTasks().filter(
-      (task) => !task.scheduledDate
-    );
-    if (tasksToRender.length === 0) {
-      unscheduledTasksListMobile.innerHTML =
-        '<p style="padding: 15px; text-align: center; color: #777;">No unscheduled tasks.</p>';
-    } else {
-      tasksToRender.forEach((task) => {
-        unscheduledTasksListMobile.appendChild(createTaskElement(task));
-      });
-    }
+    const activeTasks = getAllActiveTasks();
+    activeTasks.forEach((task) => {
+      if (!task.scheduledDate) {
+        const taskElement = createTaskElement(task);
+        unscheduledTasksListMobile.appendChild(taskElement);
+      }
+    });
     addDragListenersToTasks(unscheduledTasksListMobile);
   }
 
   function renderMobileHistoryTasks() {
     if (!taskHistoryListMobile) return;
     taskHistoryListMobile.innerHTML = "";
-    const fullHistory = getAllTaskHistory();
+    const fullHistory = getAllTaskHistory(); // Show full history
     if (fullHistory.length === 0) {
       taskHistoryListMobile.innerHTML =
-        '<p style="padding: 15px; text-align: center; color: #777;">No task history yet.</p>';
+        '<p style="padding: 10px; text-align: center; color: #777;">No task history yet.</p>';
     } else {
       fullHistory.forEach((entry) => {
-        taskHistoryListMobile.appendChild(createHistoryElement(entry));
+        const div = createHistoryElement(entry);
+        taskHistoryListMobile.appendChild(div);
       });
+    }
+    // Note: Pagination/lazy loading might be needed for very long histories
+  }
+
+  // --- Dashboard Panel Rendering ---
+  function renderDashboard() {
+    const activeTasks = getAllActiveTasks();
+    renderTimePerSubject(activeTasks);
+    renderFocusChart(activeTasks);
+    renderUpcomingTasks(activeTasks);
+    // Note: Weekly summary is user input, no render needed beyond initial HTML
+  }
+
+  function renderTimePerSubject(tasks) {
+    if (!timePerSubjectUl || !subjectProgressBarsDiv) return;
+    const timeMap = {};
+    DISCIPLINES.forEach((cat) => (timeMap[cat] = 0));
+    tasks.forEach((task) => {
+      if (task.category && task.estTime > 0) {
+        timeMap[task.category] = (timeMap[task.category] || 0) + task.estTime;
+      }
+    });
+    timePerSubjectUl.innerHTML = "";
+    subjectProgressBarsDiv.innerHTML = "";
+    let totalEstTime = Object.values(timeMap).reduce(
+      (sum, time) => sum + time,
+      0
+    );
+    let contentAdded = false;
+    Object.entries(timeMap).forEach(([category, time]) => {
+      if (time > 0) {
+        contentAdded = true;
+        const li = document.createElement("li");
+        const hours = Math.floor(time / 60);
+        const minutes = time % 60;
+        li.innerHTML = `<strong>${escapeHTML(
+          category
+        )}:</strong> ${hours}h ${minutes}m`;
+        timePerSubjectUl.appendChild(li);
+        const percentage =
+          totalEstTime > 0 ? ((time / totalEstTime) * 100).toFixed(1) : 0;
+        const barContainer = document.createElement("div");
+        barContainer.classList.add("progress-bar-container");
+        barContainer.innerHTML = `<span class="progress-bar-label">${escapeHTML(
+          category
+        )} (${percentage}%)</span><div class="progress-bar"><div class="progress-bar-fill" style="width: ${percentage}%;">${
+          percentage > 15 ? `${hours}h ${minutes}m` : ""
+        }</div></div>`;
+        subjectProgressBarsDiv.appendChild(barContainer);
+      }
+    });
+    if (!contentAdded) {
+      timePerSubjectUl.innerHTML = "<li>No estimated time logged.</li>";
     }
   }
 
-  // --- Dashboard Panel Rendering (Keep sub-functions as before) ---
-  function renderDashboard() {
-    /* ... calls sub-renderers ... */
-  }
-  function renderTimePerSubject(tasks) {
-    /* ... keep implementation ... */
-  }
   function renderFocusChart(tasks) {
-    /* ... keep implementation ... */
+    if (!focusChartCanvas) return;
+    const focusCounts = { deep: 0, medium: 0, shallow: 0, unknown: 0 };
+    let hasData = false;
+    tasks.forEach((task) => {
+      if (task.focus === "deep") focusCounts.deep++;
+      else if (task.focus === "medium") focusCounts.medium++;
+      else if (task.focus === "shallow") focusCounts.shallow++;
+      else focusCounts.unknown++;
+      if (task.focus) hasData = true;
+    });
+    if (!hasData && focusCounts.unknown === tasks.length)
+      hasData = tasks.length > 0; // Consider "unknown" as data if tasks exist
+
+    const chartData = {
+      labels: ["Deep", "Medium", "Shallow", "Not Set"],
+      datasets: [
+        {
+          label: "Focus Level",
+          data: [
+            focusCounts.deep,
+            focusCounts.medium,
+            focusCounts.shallow,
+            focusCounts.unknown,
+          ],
+          backgroundColor: ["#e74c3c", "#f1c40f", "#3498db", "#bdc3c7"],
+          borderWidth: 1,
+        },
+      ],
+    };
+    const ctx = focusChartCanvas.getContext("2d");
+    try {
+      if (focusChartInstance) {
+        if (hasData) {
+          focusChartInstance.data = chartData;
+          focusChartInstance.update();
+        } else {
+          focusChartInstance.destroy();
+          focusChartInstance = null;
+          /* Clear canvas */ ctx.clearRect(
+            0,
+            0,
+            ctx.canvas.width,
+            ctx.canvas.height
+          );
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(
+            "No focus data.",
+            ctx.canvas.width / 2,
+            ctx.canvas.height / 2
+          );
+        }
+      } else if (hasData) {
+        focusChartInstance = new Chart(ctx, {
+          type: "doughnut",
+          data: chartData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: "bottom", labels: { padding: 15 } },
+            },
+          },
+        });
+      } else {
+        /* Clear canvas if no instance and no data */ ctx.clearRect(
+          0,
+          0,
+          ctx.canvas.width,
+          ctx.canvas.height
+        );
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(
+          "No focus data.",
+          ctx.canvas.width / 2,
+          ctx.canvas.height / 2
+        );
+      }
+    } catch (error) {
+      console.error("Error rendering focus chart:", error);
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "red";
+      ctx.fillText("Chart Error", ctx.canvas.width / 2, ctx.canvas.height / 2);
+    }
   }
+
   function renderUpcomingTasks(tasks) {
-    /* ... keep implementation ... */
+    if (!upcomingTasksUl) return;
+    upcomingTasksUl.innerHTML = "";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+
+    // Improved date handling for upcoming tasks
+    const upcoming = tasks
+      .filter((task) => task.scheduledDate && isValidDate(task.scheduledDate))
+      .map((task) => {
+        // Create a proper date object from the ISO string
+        const dateObj = new Date(task.scheduledDate + "T00:00:00");
+        return {
+          ...task,
+          dateObj: isNaN(dateObj) ? null : dateObj,
+        };
+      })
+      .filter(
+        (task) =>
+          task.dateObj && task.dateObj >= today && task.dateObj < nextWeek
+      )
+      .sort((a, b) => a.dateObj - b.dateObj);
+
+    if (upcoming.length === 0) {
+      upcomingTasksUl.innerHTML =
+        "<li>No tasks scheduled in the next 7 days.</li>";
+      return;
+    }
+
+    upcoming.forEach((task) => {
+      const li = document.createElement("li");
+      const formattedDueDate = formatDate(task.dateObj);
+      li.innerHTML = `<strong>${escapeHTML(
+        task.title
+      )}</strong> - Due: ${formattedDueDate} (${escapeHTML(
+        task.category || "N/A"
+      )})`;
+      li.style.cursor = "pointer";
+      li.addEventListener("click", () => openModalForEdit(task.id));
+      upcomingTasksUl.appendChild(li);
+    });
   }
 
   // --- Element Creation Helpers ---
   function createTaskElement(task) {
-    // ... (Implementation from previous response - Ensure task title is accessed correctly) ...
     const div = document.createElement("div");
-    // Use className for efficiency if replacing all classes
     div.className = `task priority-${
       task.priority || "not-urgent-not-important"
-    }`;
+    }`; // Use className for simplicity
     div.setAttribute("draggable", "true");
     div.setAttribute("data-task-id", task.id);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (
-      task.scheduledDate &&
-      new Date(task.scheduledDate + "T00:00:00Z") < today
-    ) {
-      // UTC compare
-      div.classList.add("overdue");
+
+    // Improved date handling for overdue tasks
+    if (task.scheduledDate) {
+      const taskDate = new Date(task.scheduledDate + "T00:00:00");
+      if (!isNaN(taskDate) && taskDate < today) {
+        div.classList.add("overdue");
+      }
     }
 
+    // Improved date formatting for task elements
     let dueDateFormatted = "Unscheduled";
-    // Ensure date formatting happens correctly
-    if (task.scheduledDate && isValidDate(task.scheduledDate)) {
-      // Use local time formatting for display
-      dueDateFormatted = `Due: ${formatDate(
-        new Date(task.scheduledDate + "T00:00:00")
-      )}`;
-    } else if (task.scheduledDate) {
-      dueDateFormatted = "Due: Invalid Date";
+    if (task.scheduledDate) {
+      if (isValidDate(task.scheduledDate)) {
+        const taskDate = new Date(task.scheduledDate + "T00:00:00");
+        dueDateFormatted = `Due: ${formatDate(taskDate)}`;
+      } else {
+        dueDateFormatted = "Due: Invalid Date";
+      }
     }
 
-    // --- CRITICAL: Ensure task.title is used ---
     div.innerHTML = `
-           <h4>${escapeHTML(task.title || "No Title Provided")}</h4>
-           <p><strong>Category:</strong> ${escapeHTML(
-             task.category || "N/A"
-           )}</p>
-           ${task.description ? `<p>${escapeHTML(task.description)}</p>` : ""}
-           <div class="task-meta">
-               <span>${task.estTime ? `Est: ${task.estTime} min` : ""}</span>
-               <span>Focus: ${escapeHTML(task.focus || "N/A")}</span>
-               <span>${dueDateFormatted}</span>
-           </div>
-           <div class="task-actions">
-               <button class="btn edit-task-btn" aria-label="Edit Task"><i class="fas fa-edit"></i> Edit</button>
-               <button class="btn reschedule-task-btn" aria-label="Reschedule Task"><i class="fas fa-calendar-alt"></i> Reschedule</button>
-           </div>
-       `;
+          <h4>${escapeHTML(task.title || "No Title")}</h4>
+          <p><strong>Category:</strong> ${escapeHTML(
+            task.category || "N/A"
+          )}</p>
+          ${task.description ? `<p>${escapeHTML(task.description)}</p>` : ""}
+          <div class="task-meta">
+              <span>${task.estTime ? `Est: ${task.estTime} min` : ""}</span>
+              <span>Focus: ${escapeHTML(task.focus || "N/A")}</span>
+              <span>${dueDateFormatted}</span>
+          </div>
+          <div class="task-actions">
+              <button class="btn edit-task-btn" aria-label="Edit Task"><i class="fas fa-edit"></i> Edit</button>
+              <button class="btn reschedule-task-btn" aria-label="Reschedule Task"><i class="fas fa-calendar-alt"></i> Reschedule</button>
+          </div>
+      `;
 
-    // --- Event listeners for buttons within the task ---
-    const editBtn = div.querySelector(".edit-task-btn");
-    const rescheduleBtn = div.querySelector(".reschedule-task-btn");
-
-    if (editBtn) {
-      editBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openModalForEdit(task.id);
-      });
-    }
-    if (rescheduleBtn) {
-      rescheduleBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const latestTask = getLatestTaskVersion(task.id); // Get latest data for prompt default
-        const currentScheduledDate = latestTask?.scheduledDate || "";
-        const newDateStr = prompt(
-          `Reschedule "${
-            latestTask?.title || "task"
-          }"\nEnter new date (YYYY-MM-DD) or leave blank to unschedule:`,
-          currentScheduledDate
-        );
-
-        if (newDateStr !== null) {
-          // Handle prompt cancellation
-          if (!latestTask) return; // Should not happen if task exists
-          const updatedData = { ...latestTask };
-          delete updatedData.id;
-          delete updatedData.historyId;
-          const oldDate = updatedData.scheduledDate;
-
-          if (newDateStr === "") {
-            updatedData.scheduledDate = null; // Unschedule
-          } else if (isValidDate(newDateStr)) {
-            updatedData.scheduledDate = newDateStr; // Schedule to new date
-          } else {
-            alert("Invalid date format. Please use YYYY-MM-DD.");
-            return; // Abort if invalid
-          }
-
-          // Only update if the date actually changed
-          if (oldDate !== updatedData.scheduledDate) {
-            console.log(
-              `Rescheduling task ${task.id} from ${oldDate} to ${updatedData.scheduledDate}`
-            );
-            updateTask(task.id, updatedData); // updateTask triggers renderUI
-          }
+    // Add listeners directly here for edit/reschedule
+    div.querySelector(".edit-task-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openModalForEdit(task.id);
+    });
+    div.querySelector(".reschedule-task-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const currentScheduledDate =
+        getLatestTaskVersion(task.id)?.scheduledDate || "";
+      const newDateStr = prompt(
+        `Reschedule "${task.title}"\nEnter new date (YYYY-MM-DD) or leave blank to unschedule:`,
+        currentScheduledDate
+      );
+      if (newDateStr !== null) {
+        const latestVersion = getLatestTaskVersion(task.id);
+        if (!latestVersion) return;
+        const updatedData = { ...latestVersion };
+        delete updatedData.id;
+        delete updatedData.historyId;
+        const oldDate = updatedData.scheduledDate;
+        if (newDateStr === "") {
+          updatedData.scheduledDate = null;
+        } else if (isValidDate(newDateStr)) {
+          updatedData.scheduledDate = newDateStr;
+        } else {
+          alert("Invalid date format (YYYY-MM-DD).");
+          return;
         }
-      });
-    }
+        if (oldDate !== updatedData.scheduledDate) {
+          updateTask(task.id, updatedData);
+        }
+      }
+    });
     return div;
   }
 
   function createHistoryElement(entry) {
-    /* ... keep as is ... */
+    const div = document.createElement("div");
+    div.className = "task history-item"; // Reuse styles
+    div.setAttribute("data-task-id", entry.taskId);
+
+    // Determine the action type
+    let action = entry.deleted
+      ? "Deleted"
+      : entry.historyIndex === 0
+      ? "Created"
+      : "Updated";
+
+    // Get title with fallback
+    let title = entry.title || "N/A";
+
+    // Format date information
+    let dateInfo = "";
+    if (entry.scheduledDate && !entry.deleted) {
+      if (isValidDate(entry.scheduledDate)) {
+        const taskDate = new Date(entry.scheduledDate + "T00:00:00");
+        dateInfo = ` on ${formatDate(taskDate)}`;
+      } else {
+        dateInfo = " (invalid date)";
+      }
+    } else if (!entry.deleted) {
+      dateInfo = " (unscheduled)";
+    }
+
+    // Format timestamp
+    const timestamp = new Date(entry.timestamp);
+    const formattedTimestamp = timestamp.toLocaleString();
+
+    div.innerHTML = `<p><strong>${action}:</strong> ${escapeHTML(
+      title
+    )}${dateInfo}</p><div class="task-meta"><span>${formattedTimestamp}</span></div>`;
+
+    div.addEventListener("click", () => openModalForEdit(entry.taskId));
+    return div;
   }
 
   // ========================================
   // Modal Handling
   // ========================================
   function openModalForCreate(category = "") {
-    // ... (reset form as before) ...
     modalTitle.textContent = "Create New Task";
     taskForm.reset();
     taskIdInput.value = "";
@@ -513,14 +769,16 @@ document.addEventListener("DOMContentLoaded", () => {
     taskHistoryView.style.display = "none";
     taskHistoryItemsUl.innerHTML = "";
     if (category && DISCIPLINES.includes(category)) {
-      taskCategorySelect.value = category;
+      document.getElementById("task-category").value = category;
     }
+    // Set default priority if needed
     const defaultPriority = taskForm.querySelector(
       'input[name="priority"][value="not-urgent-important"]'
     );
-    if (defaultPriority) defaultPriority.checked = true; // Default priority
+    if (defaultPriority) defaultPriority.checked = true;
+
     modal.style.display = "block";
-    taskTitleInput.focus(); // Focus title input
+    document.getElementById("task-title").focus();
   }
 
   function openModalForEdit(taskId) {
@@ -532,14 +790,13 @@ document.addEventListener("DOMContentLoaded", () => {
     modalTitle.textContent = "Edit Task";
     taskForm.reset();
     taskIdInput.value = task.id;
-    // --- Ensure all fields are populated correctly ---
-    taskTitleInput.value = task.title || "";
-    taskCategorySelect.value = task.category || "";
-    taskDescriptionTextarea.value = task.description || "";
-    taskEstTimeInput.value = task.estTime || "";
-    taskScheduledDateInput.value = task.scheduledDate || "";
-    taskFocusSelect.value = task.focus || "";
-    // --- Repopulate Priority ---
+    document.getElementById("task-title").value = task.title || "";
+    document.getElementById("task-category").value = task.category || "";
+    document.getElementById("task-description").value = task.description || "";
+    document.getElementById("task-est-time").value = task.estTime || "";
+    document.getElementById("task-scheduled-date").value =
+      task.scheduledDate || "";
+    document.getElementById("task-focus").value = task.focus || "";
     let prioritySet = false;
     taskForm.querySelectorAll('input[name="priority"]').forEach((radio) => {
       radio.checked = radio.value === task.priority;
@@ -550,7 +807,6 @@ document.addEventListener("DOMContentLoaded", () => {
         'input[name="priority"][value="not-urgent-not-important"]'
       ).checked = true;
     }
-    // --- Show delete button and history ---
     deleteTaskBtn.style.display = "inline-block";
     renderTaskHistoryInModal(taskId);
     taskHistoryView.style.display = "block";
@@ -558,146 +814,285 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderTaskHistoryInModal(taskId) {
-    /* ... keep as is ... */
-  }
-  function closeModal() {
-    /* ... keep as is ... */
+    taskHistoryItemsUl.innerHTML = "";
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || !task.history) return;
+    [...task.history].reverse().forEach((version, index) => {
+      const li = document.createElement("li");
+      const timestamp = new Date(version.timestamp).toLocaleString();
+      let changeDesc = version.deleted
+        ? "Deleted"
+        : index === task.history.length - 1
+        ? "Created"
+        : "Updated";
+      li.innerHTML = `<strong>${timestamp}:</strong> ${changeDesc} - ${escapeHTML(
+        version.title || "N/A"
+      )}`;
+      taskHistoryItemsUl.appendChild(li);
+    });
   }
 
-  // --- CRITICAL: Form Submit Handler ---
+  function closeModal() {
+    modal.style.display = "none";
+    taskForm.reset();
+  }
+
   function handleFormSubmit(event) {
     event.preventDefault();
-    const taskId = taskIdInput.value; // Get task ID for editing, if any
-
-    // --- Read values directly from elements inside the handler ---
-    const title = taskTitleInput.value.trim(); // Get title value
-    const category = taskCategorySelect.value;
-    const description = taskDescriptionTextarea.value.trim();
-    const estTime = parseInt(taskEstTimeInput.value, 10) || null;
-    const scheduledDate = taskScheduledDateInput.value || null; // YYYY-MM-DD or null
-    const focus = taskFocusSelect.value;
-    const priority =
-      taskForm.querySelector('input[name="priority"]:checked')?.value ||
-      "not-urgent-not-important";
-
-    // --- Validation ---
-    if (!title || !category || !focus) {
+    const taskId = taskIdInput.value;
+    const taskData = {
+      title: document.getElementById("task-title").value.trim(),
+      category: document.getElementById("task-category").value,
+      description: document.getElementById("task-description").value.trim(),
+      estTime:
+        parseInt(document.getElementById("task-est-time").value, 10) || null,
+      scheduledDate:
+        document.getElementById("task-scheduled-date").value || null,
+      priority:
+        taskForm.querySelector('input[name="priority"]:checked')?.value ||
+        "not-urgent-not-important",
+      focus: document.getElementById("task-focus").value,
+    };
+    if (!taskData.title || !taskData.category || !taskData.focus) {
       alert("Title, Category, and Focus Level are required.");
       return;
     }
-    if (scheduledDate && !isValidDate(scheduledDate)) {
-      alert("Invalid scheduled date format. Please use YYYY-MM-DD.");
+    if (taskData.scheduledDate && !isValidDate(taskData.scheduledDate)) {
+      alert("Invalid date format (YYYY-MM-DD).");
       return;
     }
-
-    // --- Create data object ---
-    const taskData = {
-      title,
-      category,
-      description,
-      estTime,
-      scheduledDate,
-      priority,
-      focus,
-    };
-    console.log(`Form Submit. TaskID: ${taskId || "NEW"}, Data:`, taskData); // Debug log
-
-    // --- Call Create or Update ---
+    console.log("Form Submit Data:", taskData);
     if (taskId) {
       updateTask(taskId, taskData);
     } else {
       createTask(taskData);
     }
-    // closeModal() is called within createTask/updateTask
   }
 
   // ========================================
-  // Drag and Drop (Keep as is)
+  // Drag and Drop (No changes needed if structure is sound)
   // ========================================
   function addDragListenersToTasks(containerElement) {
-    /* ... keep as is ... */
+    if (!containerElement) return;
+    containerElement
+      .querySelectorAll('.task[draggable="true"]')
+      .forEach(addDragListenersToTask);
   }
   function addDragListenersToTask(taskElement) {
-    /* ... keep as is ... */
+    taskElement.addEventListener("dragstart", handleDragStart);
+    taskElement.addEventListener("dragend", handleDragEnd);
+    taskElement.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
+    taskElement.addEventListener("touchmove", handleTouchMove, {
+      passive: false,
+    });
+    taskElement.addEventListener("touchend", handleTouchEnd);
   }
   function handleDragStart(e) {
-    /* ... keep as is ... */
+    const taskElement = e.target.closest(".task");
+    if (!taskElement) return;
+    draggedTaskId = taskElement.dataset.taskId;
+    try {
+      e.dataTransfer.setData("text/plain", draggedTaskId);
+      e.dataTransfer.effectAllowed = "move";
+    } catch (err) {
+      console.error("DragStart Error:", err);
+    }
+    setTimeout(() => taskElement.classList.add("dragging"), 0);
   }
   function handleDragEnd(e) {
-    /* ... keep as is ... */
-  }
+    const taskElement = e.target.closest(".task");
+    if (taskElement) taskElement.classList.remove("dragging");
+    draggedTaskId = null;
+    document
+      .querySelectorAll(".drop-zone.drag-over")
+      .forEach((zone) => zone.classList.remove("drag-over"));
+  } // Ensure hover removed
   function handleDragOver(e) {
-    /* ... keep as is ... */
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    const dropZone = e.target.closest(".drop-zone");
+    if (dropZone && !dropZone.classList.contains("drag-over")) {
+      document
+        .querySelectorAll(".drop-zone.drag-over")
+        .forEach((zone) => zone.classList.remove("drag-over"));
+      dropZone.classList.add("drag-over");
+    }
   }
   function handleDragLeave(e) {
-    /* ... keep as is ... */
+    const dropZone = e.target.closest(".drop-zone");
+    if (dropZone && (!e.relatedTarget || !dropZone.contains(e.relatedTarget))) {
+      dropZone.classList.remove("drag-over");
+    }
   }
   function handleDrop(e) {
-    /* ... keep as is, ensure updateTask is called correctly ... */
+    e.preventDefault();
+    const dropZone = e.target.closest(".drop-zone");
+    if (!dropZone) return;
+    dropZone.classList.remove("drag-over");
+    let taskIdToDrop = null;
+    try {
+      taskIdToDrop = e.dataTransfer.getData("text/plain");
+    } catch (err) {}
+    if (!taskIdToDrop && draggedTaskId) {
+      taskIdToDrop = draggedTaskId;
+    }
+    if (!taskIdToDrop) {
+      console.error("No task ID found on drop.");
+      draggedTaskId = null;
+      return;
+    }
+    const task = getLatestTaskVersion(taskIdToDrop);
+    if (!task) {
+      console.error(`Task data not found for dropped ID: ${taskIdToDrop}`);
+      draggedTaskId = null;
+      return;
+    }
+    const targetDate = dropZone.dataset.date;
+    const updatedData = { ...task };
+    delete updatedData.id;
+    delete updatedData.historyId;
+    const oldDate = updatedData.scheduledDate;
+    updatedData.scheduledDate =
+      targetDate === "unscheduled" ? null : targetDate;
+    if (oldDate !== updatedData.scheduledDate) {
+      updateTask(taskIdToDrop, updatedData);
+    } // updateTask calls renderUI
+    draggedTaskId = null;
   }
   // --- Touch Handlers ---
+  let touchStartX, touchStartY;
+  let draggedElement = null;
+  let isDragging = false;
   function handleTouchStart(e) {
-    /* ... keep as is ... */
+    draggedElement = e.target.closest(".task");
+    if (!draggedElement) return;
+    draggedTaskId = draggedElement.dataset.taskId;
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    isDragging = false;
   }
   function handleTouchMove(e) {
-    /* ... keep as is ... */
+    if (!draggedElement || !draggedTaskId) return;
+    const touch = e.touches[0];
+    const deltaY = Math.abs(touch.clientY - touchStartY);
+    const deltaX = Math.abs(touch.clientX - touchStartX);
+    if (!isDragging && (deltaY > 10 || deltaX > 10)) {
+      isDragging = true;
+      draggedElement.classList.add("dragging");
+    }
+    if (isDragging) {
+      e.preventDefault();
+      draggedElement.style.visibility = "hidden";
+      const elementUnderTouch = document.elementFromPoint(
+        touch.clientX,
+        touch.clientY
+      );
+      draggedElement.style.visibility = "visible";
+      const dropZone = elementUnderTouch
+        ? elementUnderTouch.closest(".drop-zone")
+        : null;
+      document.querySelectorAll(".drop-zone").forEach((zone) => {
+        zone.classList.toggle("drag-over", zone === dropZone);
+      });
+    }
   }
   function handleTouchEnd(e) {
-    /* ... keep as is, ensure updateTask is called correctly ... */
+    if (!draggedElement || !draggedTaskId || !isDragging) {
+      if (draggedElement) draggedElement.classList.remove("dragging");
+      draggedElement = null;
+      draggedTaskId = null;
+      isDragging = false;
+      document
+        .querySelectorAll(".drop-zone.drag-over")
+        .forEach((zone) => zone.classList.remove("drag-over"));
+      return;
+    }
+    const dropZone = document.querySelector(".drop-zone.drag-over");
+    if (dropZone) {
+      const taskId = draggedTaskId;
+      const task = getLatestTaskVersion(taskId);
+      if (task) {
+        const targetDate = dropZone.dataset.date;
+        const updatedData = { ...task };
+        delete updatedData.id;
+        delete updatedData.historyId;
+        const oldDate = updatedData.scheduledDate;
+        updatedData.scheduledDate =
+          targetDate === "unscheduled" ? null : targetDate;
+        if (oldDate !== updatedData.scheduledDate) {
+          updateTask(taskId, updatedData);
+        }
+      }
+    }
+    draggedElement.classList.remove("dragging");
+    draggedElement = null;
+    draggedTaskId = null;
+    isDragging = false;
+    document
+      .querySelectorAll(".drop-zone.drag-over")
+      .forEach((zone) => zone.classList.remove("drag-over"));
   }
 
   // ========================================
   // Tab Switching
   // ========================================
-  function activateTab(targetPanelSelector, triggerRender = true) {
-    if (!targetPanelSelector) return;
-    console.log(
-      `Activating tab: ${targetPanelSelector}, Trigger Render: ${triggerRender}`
-    );
+  function activateTab(targetPanelSelector) {
+    if (!targetPanelSelector) {
+      console.warn("activateTab called with no target selector.");
+      return;
+    }
+    console.log("Activating tab:", targetPanelSelector);
 
-    // Update buttons
-    tabButtons.forEach((button) =>
+    // Update buttons state
+    tabButtons.forEach((button) => {
       button.classList.toggle(
         "active",
         button.dataset.tabTarget === targetPanelSelector
-      )
-    );
-
-    // Update panels
-    let panelActivated = false;
-    tabPanels.forEach((panel) => {
-      const isActive = `#${panel.id}` === targetPanelSelector;
-      panel.classList.toggle("active", isActive); // Use class for display: block/none
-      if (isActive) panelActivated = true;
+      );
     });
 
-    if (!panelActivated) {
-      console.error(`Panel not found: ${targetPanelSelector}`);
+    // Update panels visibility
+    let panelFound = false;
+    tabPanels.forEach((panel) => {
+      const panelId = `#${panel.id}`;
+      const isActive = panelId === targetPanelSelector;
+      panel.classList.toggle("active", isActive); // Use class for display
+      if (isActive) {
+        panelFound = true;
+        // Scroll main content area to top when tab changes
+        if (mainContent) mainContent.scrollTop = 0;
+      }
+    });
+
+    if (!panelFound) {
+      console.error(
+        `Target panel not found for selector: ${targetPanelSelector}`
+      );
+      // Optionally activate a default tab if target is invalid
+      // activateTab('#tab-panel-schedule');
       return;
     }
 
-    currentActiveTabSelector = targetPanelSelector; // Store active tab
+    currentActiveTabSelector = targetPanelSelector; // Store the current active tab
 
-    // Scroll main content to top for the new panel
-    if (mainContent) mainContent.scrollTop = 0;
-
-    // Refresh content only if requested (to avoid loops during initial render)
-    if (triggerRender) {
-      console.log(`Triggering render for ${targetPanelSelector}`);
-      switch (targetPanelSelector) {
-        case "#tab-panel-schedule":
-          navigateToDate(currentViewDate);
-          break;
-        case "#tab-panel-unscheduled":
-          renderMobileUnscheduledTasks();
-          break;
-        case "#tab-panel-dashboard":
-          renderDashboard();
-          break;
-        case "#tab-panel-history":
-          renderMobileHistoryTasks();
-          break;
-      }
+    // Trigger specific rendering for the activated tab if needed
+    // (This ensures content is fresh when tab is selected)
+    switch (targetPanelSelector) {
+      case "#tab-panel-schedule":
+        navigateToDate(currentViewDate); // Re-render current date's schedule
+        break;
+      case "#tab-panel-unscheduled":
+        renderMobileUnscheduledTasks();
+        break;
+      case "#tab-panel-dashboard":
+        renderDashboard(); // Re-render dashboard charts/lists
+        break;
+      case "#tab-panel-history":
+        renderMobileHistoryTasks();
+        break;
     }
   }
 
@@ -705,28 +1100,188 @@ document.addEventListener("DOMContentLoaded", () => {
   // Export & Utilities
   // ========================================
   function generateWeeklySummary() {
-    /* ... keep as is ... */
+    const wellText = summaryWellTextarea?.value || "";
+    const blockersText = summaryBlockersTextarea?.value || "";
+    const nextText = summaryNextTextarea?.value || "";
+
+    // Get active tasks for the summary
+    const activeTasks = getAllActiveTasks();
+    const completedTasks = activeTasks.filter((t) => t.completed);
+    const pendingTasks = activeTasks.filter((t) => !t.completed);
+
+    // Generate summary text
+    let summaryText = "# Weekly Summary\n\n";
+    summaryText += `## What Went Well\n${
+      wellText || "No information provided."
+    }\n\n`;
+    summaryText += `## Blockers\n${
+      blockersText || "No blockers reported."
+    }\n\n`;
+    summaryText += `## Next Steps\n${
+      nextText || "No next steps provided."
+    }\n\n`;
+
+    // Add task statistics
+    summaryText += `## Task Statistics\n`;
+    summaryText += `- Total Active Tasks: ${activeTasks.length}\n`;
+    summaryText += `- Completed Tasks: ${completedTasks.length}\n`;
+    summaryText += `- Pending Tasks: ${pendingTasks.length}\n\n`;
+
+    // Display the generated summary
+    if (generatedSummaryOutput) {
+      generatedSummaryOutput.textContent = summaryText;
+    }
   }
+
   function exportToJson() {
-    /* ... keep as is ... */
+    const activeTasks = getAllActiveTasks();
+    const dataStr = JSON.stringify(activeTasks, null, 2);
+    const dataUri =
+      "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+    const exportFileDefaultName = `learning_tasks_${formatDateISO(
+      new Date()
+    )}.json`;
+
+    const linkElement = document.createElement("a");
+    linkElement.setAttribute("href", dataUri);
+    linkElement.setAttribute("download", exportFileDefaultName);
+    linkElement.click();
   }
+
   function exportToCsv() {
-    /* ... keep as is ... */
+    const activeTasks = getAllActiveTasks();
+
+    // Define CSV headers
+    const headers = [
+      "Title",
+      "Category",
+      "Description",
+      "Estimated Time (min)",
+      "Scheduled Date",
+      "Priority",
+      "Focus Level",
+    ];
+
+    // Create CSV content
+    let csvContent = headers.map(escapeCsvField).join(",") + "\n";
+
+    // Add task data
+    activeTasks.forEach((task) => {
+      const row = [
+        task.title || "",
+        task.category || "",
+        task.description || "",
+        task.estTime || "",
+        task.scheduledDate || "",
+        task.priority || "",
+        task.focus || "",
+      ];
+      csvContent += row.map(escapeCsvField).join(",") + "\n";
+    });
+
+    // Create download link
+    const dataUri =
+      "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+    const exportFileDefaultName = `learning_tasks_${formatDateISO(
+      new Date()
+    )}.csv`;
+
+    const linkElement = document.createElement("a");
+    linkElement.setAttribute("href", dataUri);
+    linkElement.setAttribute("download", exportFileDefaultName);
+    linkElement.click();
   }
+
   function escapeCsvField(field) {
-    /* ... keep as is ... */
+    if (field === null || field === undefined) return "";
+
+    // Convert to string
+    const str = String(field);
+
+    // Check if we need to quote the field
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+      // Escape double quotes by doubling them
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+
+    return str;
   }
+
   function escapeHTML(str) {
-    /* ... keep as is ... */
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
+
+  // Improved date formatting function
   function formatDate(date) {
-    /* ... keep as is (using local time for display) ... */
+    if (!(date instanceof Date)) {
+      // Try to convert string to date if it's a string
+      if (typeof date === "string") {
+        date = new Date(date);
+      } else {
+        return "Invalid Date";
+      }
+    }
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return "Invalid Date";
+    }
+
+    // Format the date using locale string for better internationalization
+    return date.toLocaleDateString(undefined, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   }
+
+  // Improved ISO date formatting
   function formatDateISO(date) {
-    /* ... keep as is (YYYY-MM-DD) ... */
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      return "";
+    }
+
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
   }
+
+  // Improved date validation
   function isValidDate(dateString) {
-    /* ... keep as is (using UTC for validation) ... */
+    // Check basic format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return false;
+    }
+
+    // Try to create a date object and check if it's valid
+    const date = new Date(dateString + "T00:00:00");
+    if (isNaN(date.getTime())) {
+      return false;
+    }
+
+    // Ensure the date components match what was provided
+    // This catches invalid dates like 2023-02-31
+    const parts = dateString.split("-");
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+    const day = parseInt(parts[2], 10);
+
+    const reconstructedDate = new Date(year, month, day);
+
+    return (
+      reconstructedDate.getFullYear() === year &&
+      reconstructedDate.getMonth() === month &&
+      reconstructedDate.getDate() === day
+    );
   }
 
   // ========================================
@@ -734,21 +1289,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // ========================================
   function setupEventListeners() {
     console.log("Setting up event listeners...");
+    // Create Task Buttons (Desktop + Mobile FAB)
+    createTaskBtns.forEach((btn) => {
+      btn?.addEventListener("click", () => openModalForCreate());
+    });
 
-    // --- Modal Related ---
-    createTaskBtns.forEach((btn) =>
-      btn?.addEventListener("click", () => openModalForCreate())
-    ); // Desktop button + FAB
+    // Modal Listeners
     closeModalBtn?.addEventListener("click", closeModal);
     cancelModalBtn?.addEventListener("click", closeModal);
-    taskForm?.addEventListener("submit", handleFormSubmit); // Central submit handler
+    taskForm?.addEventListener("submit", handleFormSubmit);
     deleteTaskBtn?.addEventListener("click", () => {
-      // Delete button in modal
       const taskId = taskIdInput.value;
       if (
         taskId &&
         confirm(
-          "Are you sure you want to delete this task? History will be kept."
+          "Are you sure you want to delete this task? Its history will be kept."
         )
       ) {
         deleteTask(taskId);
@@ -760,9 +1315,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (event.target === modal) {
         closeModal();
       }
-    });
+    }); // Close modal on overlay click
 
-    // --- Scheduler Navigation ---
+    // Scheduler Navigation
     prevDayBtn?.addEventListener("click", () => {
       const d = new Date(currentViewDate);
       d.setDate(d.getDate() - 1);
@@ -777,59 +1332,59 @@ document.addEventListener("DOMContentLoaded", () => {
       navigateToDate(new Date());
     });
 
-    // --- Drag/Drop Zone Setup (Initial - might need dynamic re-attachment if zones change) ---
-    // Note: If drop zones are added/removed dynamically, listeners might need re-attachment
+    // Drag/Drop Zones (Initial attachment - more might be needed after dynamic rendering)
+    // Re-attach listeners to drop zones more dynamically if needed after rendering
     document.querySelectorAll(".drop-zone").forEach((zone) => {
-      zone.removeEventListener("dragover", handleDragOver);
-      zone.addEventListener("dragover", handleDragOver); // Re-attach safely
-      zone.removeEventListener("dragleave", handleDragLeave);
+      zone.addEventListener("dragover", handleDragOver);
       zone.addEventListener("dragleave", handleDragLeave);
-      zone.removeEventListener("drop", handleDrop);
       zone.addEventListener("drop", handleDrop);
-      zone.removeEventListener("touchmove", handleTouchMove);
       zone.addEventListener("touchmove", handleTouchMove, { passive: false });
-      zone.removeEventListener("touchend", handleTouchEnd);
       zone.addEventListener("touchend", handleTouchEnd);
     });
 
-    // --- Desktop Sidebar ---
+    // Desktop Sidebar Discipline Clicks
     disciplineList?.addEventListener("click", (e) => {
       const listItem = e.target.closest("li");
-      if (!isMobileView && listItem && listItem.dataset.category) {
-        // Only trigger from sidebar if not mobile
+      if (listItem && listItem.dataset.category) {
         openModalForCreate(listItem.dataset.category);
       }
     });
 
-    // --- Dashboard ---
+    // Dashboard Actions
     generateSummaryBtn?.addEventListener("click", generateWeeklySummary);
     exportJsonBtn?.addEventListener("click", exportToJson);
     exportCsvBtn?.addEventListener("click", exportToCsv);
 
-    // --- Mobile Tabs ---
+    // Mobile Tab Button Listeners
     tabButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const targetPanelSelector = button.dataset.tabTarget;
-        if (
-          targetPanelSelector &&
-          targetPanelSelector !== currentActiveTabSelector
-        ) {
-          // Only switch if different
-          activateTab(targetPanelSelector, true); // Activate and trigger render
+        if (targetPanelSelector) {
+          activateTab(targetPanelSelector);
         }
       });
     });
 
-    // --- Window Resize ---
+    // Resize Listener (Debounced)
     let resizeTimeout;
     window.addEventListener("resize", () => {
       clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(checkAndUpdateView, 250); // Re-check view
+      resizeTimeout = setTimeout(checkAndUpdateView, 250); // Re-check view on resize
     });
 
     console.log("Event listeners setup complete.");
-  } // End setupEventListeners
+  }
 
   // --- Start the application ---
   init();
 }); // End DOMContentLoaded
+
+// Output the refactored script
+console.log("Script refactoring complete. Key improvements:");
+console.log("1. Fixed date formatting and validation");
+console.log(
+  "2. Ensured proper synchronization between currentDateDisplay and timelineDateSpan"
+);
+console.log("3. Improved date handling in task elements and upcoming tasks");
+console.log("4. Added initialization of date display on app startup");
+console.log("5. Enhanced error handling for date-related operations");
