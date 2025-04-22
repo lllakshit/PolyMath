@@ -669,6 +669,12 @@ button {
     min-height: 180px;
   }
 }
+sidebar.show,
+.dashboard-panel.show {
+  bottom: 0; /* Ensure they extend to the bottom of the screen */
+  overflow-y: auto; /* Make content scrollable */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
 
 /* Fix for task height calculation */
 .task-card[style*="height"] {
@@ -693,6 +699,10 @@ button {
   display: block !important; /* Override webkit box display */
   -webkit-line-clamp: unset !important; /* Remove line clamping */
   -webkit-box-orient: unset !important;
+}
+body.sidebar-open,
+body.dashboard-open {
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {
@@ -724,6 +734,12 @@ button {
 
   .modal-content {
     width: 95%;
+  }
+  sidebar.show,
+  .dashboard-panel.show {
+    bottom: 0; /* Ensure they extend to the bottom of the screen */
+    overflow-y: auto; /* Make content scrollable */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
 
   .sidebar {
@@ -795,12 +811,21 @@ button {
   -webkit-line-clamp: unset !important; /* Remove line clamping */
   -webkit-box-orient: unset !important;
 }
+body.sidebar-open,
+body.dashboard-open {
+  overflow: hidden;
+}
 
 @media (max-width: 480px) {
   .time-slots {
     width: 40px;
   }
-
+  sidebar.show,
+  .dashboard-panel.show {
+    bottom: 0; /* Ensure they extend to the bottom of the screen */
+    overflow-y: auto; /* Make content scrollable */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  }
   .time-slot {
     font-size: 0.7rem;
   }
@@ -886,4 +911,8 @@ button {
   display: block !important; /* Override webkit box display */
   -webkit-line-clamp: unset !important; /* Remove line clamping */
   -webkit-box-orient: unset !important;
+}
+body.sidebar-open,
+body.dashboard-open {
+  overflow: hidden;
 }
