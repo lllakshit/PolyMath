@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Learning Task Scheduler</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="shortcut icon" href="favicon.png" type="image/x-icon" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -29,11 +28,7 @@
             Freelancing <i class="fas fa-briefcase"></i>
           </li>
         </ul>
-        <button
-          id="create-task-btn"
-          class="btn btn-primary"
-          aria-label="Create New Task"
-        >
+        <button id="create-task-btn" class="btn btn-primary">
           <i class="fas fa-plus"></i> Create New Task
         </button>
         <div class="sidebar-section">
@@ -53,14 +48,14 @@
       <main class="main-content">
         <section id="scheduler" class="scheduler-view card">
           <div class="scheduler-controls">
-            <button id="prev-day-btn" class="btn" aria-label="Previous Day">
+            <button id="prev-day-btn" class="btn">
               <i class="fas fa-chevron-left"></i> Prev Day
             </button>
             <h2 id="current-date-display"></h2>
-            <button id="next-day-btn" class="btn" aria-label="Next Day">
+            <button id="next-day-btn" class="btn">
               Next Day <i class="fas fa-chevron-right"></i>
             </button>
-            <button id="today-btn" class="btn" aria-label="Today">Today</button>
+            <button id="today-btn" class="btn">Today</button>
           </div>
           <div id="timeline-container" class="timeline drop-zone">
             <h3>Scheduled Tasks for <span id="timeline-date"></span></h3>
@@ -98,25 +93,17 @@
                 <label for="summary-next">Next steps?</label>
                 <textarea id="summary-next" rows="3"></textarea>
               </div>
-              <button
-                id="generate-summary-btn"
-                class="btn"
-                aria-label="Generate Summary"
-              >
+              <button id="generate-summary-btn" class="btn">
                 Generate Text Summary
               </button>
               <pre id="generated-summary-output"></pre>
             </div>
           </div>
           <div class="export-buttons">
-            <button
-              id="export-json-btn"
-              class="btn"
-              aria-label="Export to JSON"
-            >
+            <button id="export-json-btn" class="btn">
               <i class="fas fa-file-code"></i> Export All to JSON
             </button>
-            <button id="export-csv-btn" class="btn" aria-label="Export to CSV">
+            <button id="export-csv-btn" class="btn">
               <i class="fas fa-file-csv"></i> Export All to CSV
             </button>
           </div>
@@ -126,7 +113,7 @@
 
     <div id="task-modal" class="modal">
       <div class="modal-content card">
-        <span class="close-btn" aria-label="Close Modal">&times;</span>
+        <span class="close-btn">&times;</span>
         <h2 id="modal-title">Create New Task</h2>
         <form id="task-form">
           <input type="hidden" id="task-id" />
@@ -158,39 +145,39 @@
 
           <label>Priority (Eisenhower Matrix):</label>
           <div class="priority-matrix">
-            <label>
-              <input
+            <label
+              ><input
                 type="radio"
                 name="priority"
                 value="urgent-important"
                 required
               />
-              Urgent & Important
-            </label>
-            <label>
-              <input
+              Urgent & Important</label
+            >
+            <label
+              ><input
                 type="radio"
                 name="priority"
                 value="not-urgent-important"
               />
-              Not Urgent & Important
-            </label>
-            <label>
-              <input
+              Not Urgent & Important</label
+            >
+            <label
+              ><input
                 type="radio"
                 name="priority"
                 value="urgent-not-important"
               />
-              Urgent & Not Important
-            </label>
-            <label>
-              <input
+              Urgent & Not Important</label
+            >
+            <label
+              ><input
                 type="radio"
                 name="priority"
                 value="not-urgent-not-important"
               />
-              Not Urgent & Not Important
-            </label>
+              Not Urgent & Not Important</label
+            >
           </div>
 
           <label for="task-focus">Focus Level Required:</label>
@@ -202,12 +189,7 @@
           </select>
 
           <div class="modal-buttons">
-            <button
-              type="submit"
-              id="save-task-btn"
-              class="btn btn-primary"
-              aria-label="Save Task"
-            >
+            <button type="submit" id="save-task-btn" class="btn btn-primary">
               Save Task
             </button>
             <button
@@ -215,13 +197,10 @@
               id="delete-task-btn"
               class="btn btn-danger"
               style="display: none"
-              aria-label="Delete Task"
             >
               Delete Task
             </button>
-            <button type="button" class="cancel-btn btn" aria-label="Cancel">
-              Cancel
-            </button>
+            <button type="button" class="cancel-btn btn">Cancel</button>
           </div>
         </form>
         <div id="task-history-view" style="display: none">
