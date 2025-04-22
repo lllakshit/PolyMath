@@ -3,23 +3,31 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  /* Smoother scrolling on touch devices */
+  -webkit-overflow-scrolling: touch;
 }
 
 html,
 body {
-  height: 100%; /* Ensure body takes full height */
+  /* Use 100% height for robust viewport filling */
+  height: 100%;
+  width: 100%; /* Prevent horizontal overflow */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
   line-height: 1.6;
   background-color: #f4f7f9;
   color: #333;
+  /* Prevent body scroll, especially needed for mobile fixed layouts */
+  overflow: hidden;
 }
 
 /* Layout */
 .app-container {
   display: flex;
-  min-height: 100vh; /* Use min-height for full page */
-  width: 100%; /* Ensure container takes full width */
+  /* Use height 100% to fill body */
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* Container itself does not scroll */
 }
 
 .sidebar {
@@ -29,16 +37,19 @@ body {
   border-right: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* Allow scrolling if content overflows */
+  overflow-y: auto; /* Allow sidebar scrolling if needed */
+  flex-shrink: 0; /* Prevent sidebar from shrinking */
+  transition: width 0.2s ease-in-out; /* Add transition for width changes */
 }
 
 .main-content {
   flex-grow: 1;
   padding: 20px;
-  overflow-y: auto; /* Allow scrolling if content overflows */
+  overflow-y: auto; /* Allow main content scrolling */
   display: flex;
   flex-direction: column;
   gap: 20px; /* Space between sections */
+  min-width: 0; /* Prevent flexbox overflow issues */
 }
 
 /* Card Style */
@@ -47,6 +58,7 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   padding: 20px;
+  flex-shrink: 0; /* Prevent cards shrinking in flex */
 }
 
 /* Sidebar Styles */
@@ -56,12 +68,14 @@ body {
   font-size: 1.4em;
   border-bottom: 2px solid #3498db;
   padding-bottom: 5px;
+  flex-shrink: 0;
 }
 .sidebar h3 {
   margin-top: 20px;
   margin-bottom: 10px;
   font-size: 1.1em;
   color: #34495e;
+  flex-shrink: 0;
 }
 .sidebar ul {
   list-style: none;
@@ -82,16 +96,27 @@ body {
 }
 .sidebar li i {
   color: #7f8c8d;
+  flex-shrink: 0; /* Prevent icon shrinking */
 }
 .sidebar #create-task-btn {
   width: 100%;
   margin-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .sidebar-section {
-  margin-top: auto; /* Push history/unscheduled to bottom if space allows */
+  /* margin-top: auto; /* Removed: Caused issues on mobile */
   padding-top: 15px;
   border-top: 1px solid #eee;
+  margin-top: 15px; /* Add margin for spacing */
+  flex-shrink: 0;
+}
+.sidebar-section:first-of-type {
+  margin-top: 0; /* No margin for first section */
+  border-top: none;
+}
+.sidebar-section h3 {
+  margin-top: 0; /* Reset heading margin */
 }
 
 /* Buttons */
@@ -101,18 +126,25 @@ body {
   border-radius: 5px;
   cursor: pointer;
   font-size: 1em;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease; /* Smooth all transitions */
   display: inline-flex;
   align-items: center;
+  justify-content: center; /* Center content */
   gap: 8px;
-  text-decoration: none; /* For potential future <a> buttons */
+  text-decoration: none;
   color: #333;
   background-color: #f0f0f0;
   border: 1px solid #ccc;
+  min-height: 40px; /* Touch target size */
+  text-align: center;
 }
 .btn:hover {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   background-color: #e8e8e8;
+  border-color: #bbb; /* Slightly darker border on hover */
+}
+.btn:active {
+  transform: translateY(1px); /* Press effect */
 }
 .btn-primary {
   background-color: #3498db;
@@ -143,12 +175,14 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  flex-wrap: wrap; /* Allow wrapping on small screens */
+  flex-wrap: wrap;
   gap: 10px;
 }
 #current-date-display {
   font-weight: bold;
   font-size: 1.3em;
+  flex-grow: 1; /* Allow date to take available space */
+  text-align: center; /* Center date text */
 }
 
 /* Timeline & Task Lists */
@@ -159,7 +193,7 @@ body {
   border-radius: 5px;
   padding: 15px;
   background-color: #f8f9fa;
-  margin-top: 10px; /* Add some space */
+  margin-top: 10px;
 }
 #unscheduled-tasks-list {
   background-color: #fdfefe;
@@ -169,13 +203,14 @@ body {
 .task {
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
-  padding: 12px;
-  margin-bottom: 10px;
+  /* More padding for better spacing, left adjusted for dot */
+  padding: 14px 14px 14px 28px;
+  margin-bottom: 12px; /* Increased margin */
   border-radius: 6px;
   cursor: grab;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.2s ease;
-  position: relative; /* For absolute positioned elements like priority */
+  position: relative;
 }
 .task:active {
   cursor: grabbing;
@@ -183,67 +218,72 @@ body {
 }
 .task.dragging {
   opacity: 0.6;
-  border: 1px dashed #3498db;
+  border-style: dashed; /* Use style instead of separate border */
+  border-color: #3498db;
 }
 .task h4 {
-  margin-bottom: 5px;
-  font-size: 1.1em;
+  margin-bottom: 6px; /* Slightly more space */
+  font-size: 1.05em; /* Slightly smaller */
+  font-weight: 600; /* Bolder title */
 }
 .task p {
   font-size: 0.9em;
   color: #555;
-  margin-bottom: 3px;
-  white-space: pre-wrap; /* Respect newlines in description */
-  word-break: break-word; /* Prevent long words from overflowing */
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .task .task-meta {
   font-size: 0.8em;
   color: #777;
-  margin-top: 8px;
+  margin-top: 10px; /* More space before meta */
   display: flex;
   justify-content: space-between;
-  flex-wrap: wrap; /* Wrap meta info if needed */
-  gap: 5px;
+  flex-wrap: wrap;
+  gap: 5px 10px; /* Row and column gap */
 }
 .task .task-actions {
-  margin-top: 8px;
+  margin-top: 12px; /* More space before actions */
   display: flex;
-  gap: 5px;
+  gap: 8px; /* Increased gap */
+  flex-wrap: wrap; /* Allow actions to wrap */
 }
 .task .task-actions .btn {
-  padding: 3px 6px;
-  font-size: 0.8em;
+  padding: 4px 8px; /* Adjust padding */
+  font-size: 0.85em; /* Adjust size */
+  min-height: 30px; /* Minimum height */
 }
 .task.overdue {
-  border-left: 5px solid #e74c3c; /* Red border for overdue */
+  border-left: 5px solid #e74c3c;
   background-color: #fdecea;
 }
 
 /* Priority Indicators */
 .task::before {
-  /* Using ::before for priority dot */
   content: "";
   position: absolute;
-  left: -12px; /* Position outside the padding */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
+  /* Position inside the left padding */
+  left: 10px;
+  /* Adjust vertical alignment */
+  top: 16px;
+  width: 10px; /* Slightly larger dot */
+  height: 10px;
   border-radius: 50%;
-  background-color: #bdc3c7; /* Default (e.g., not urgent/not important) */
+  background-color: #bdc3c7;
 }
+/* Colors remain the same */
 .task.priority-urgent-important::before {
   background-color: #e74c3c;
-} /* Red */
+}
 .task.priority-not-urgent-important::before {
   background-color: #f1c40f;
-} /* Yellow */
+}
 .task.priority-urgent-not-important::before {
   background-color: #3498db;
-} /* Blue */
+}
 .task.priority-not-urgent-not-important::before {
   background-color: #95a5a6;
-} /* Gray */
+}
 
 /* Drop Zone Hover Effect */
 .drop-zone.drag-over {
@@ -253,46 +293,50 @@ body {
 
 /* Modal Styles */
 .modal {
-  display: none; /* Hidden by default */
+  display: none;
   position: fixed;
   z-index: 1000;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.5); /* Dim background */
+  overflow: auto; /* Allow modal scroll if needed */
+  background-color: rgba(0, 0, 0, 0.55); /* Slightly darker overlay */
   animation: fadeIn 0.3s ease;
 }
 .modal-content {
   position: relative;
-  margin: 5% auto; /* Centered vertically for larger screens */
-  padding: 30px;
+  margin: 5vh auto; /* Use vh for vertical centering */
+  padding: 24px; /* Consistent padding */
   width: 90%;
-  max-width: 600px;
-  max-height: 90vh; /* Limit height and allow scrolling */
-  overflow-y: auto;
+  max-width: 550px; /* Slightly narrower max width */
+  background-color: #fff; /* Explicit background */
+  border-radius: 8px; /* Match card style */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
+  max-height: 90vh; /* Limit height */
+  overflow-y: auto; /* Allow content scroll */
 }
 .close-btn {
   position: absolute;
   top: 10px;
-  right: 20px;
+  right: 15px;
   color: #aaa;
   font-size: 28px;
   font-weight: bold;
   cursor: pointer;
+  line-height: 1; /* Ensure tight line height */
 }
 .close-btn:hover,
 .close-btn:focus {
   color: black;
-  text-decoration: none;
 }
 #task-form label {
   display: block;
   margin-top: 15px;
   margin-bottom: 5px;
-  font-weight: bold;
+  font-weight: 500; /* Medium weight labels */
   color: #555;
+  font-size: 0.95em; /* Slightly larger */
 }
 #task-form input[type="text"],
 #task-form input[type="number"],
@@ -300,47 +344,65 @@ body {
 #task-form select,
 #task-form textarea {
   width: 100%;
-  padding: 10px;
+  padding: 10px 12px; /* Consistent padding */
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 1em;
+  min-height: 40px; /* Ensure touch target size */
+}
+#task-form input[type="text"]:focus, /* Add focus styles */
+#task-form input[type="number"]:focus,
+#task-form input[type="date"]:focus,
+#task-form select:focus,
+#task-form textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 #task-form textarea {
-  resize: vertical; /* Allow vertical resize only */
+  resize: vertical;
+  min-height: 70px; /* Minimum textarea height */
 }
 #task-form small {
   font-size: 0.85em;
   color: #777;
   display: block;
-  margin-top: -3px;
+  margin-top: 2px; /* Reduced margin */
   margin-bottom: 10px;
 }
 .priority-matrix {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(180px, 1fr)
+  ); /* Adjust minmax */
+  gap: 8px 12px; /* Row and column gap */
   margin-bottom: 15px;
   background-color: #f8f9fa;
-  padding: 10px;
+  padding: 12px; /* Increase padding */
   border-radius: 4px;
   border: 1px solid #eee;
 }
 .priority-matrix label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px; /* Reduced gap */
   margin: 0;
   font-weight: normal;
+  font-size: 0.9em; /* Adjust size */
+  cursor: pointer; /* Make label clickable */
 }
 .priority-matrix input[type="radio"] {
-  width: auto; /* Override default width */
+  width: auto;
+  margin-right: 4px; /* Space between radio and text */
+  flex-shrink: 0;
 }
 .modal-buttons {
   margin-top: 25px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  flex-wrap: wrap; /* Wrap buttons if needed */
+  flex-wrap: wrap;
 }
 #task-history-view {
   margin-top: 20px;
@@ -351,15 +413,22 @@ body {
   margin-bottom: 10px;
 }
 #task-history-items {
-  list-style-type: disc;
-  padding-left: 20px;
+  list-style-type: none; /* Remove bullets */
+  padding-left: 0; /* Remove padding */
   max-height: 200px;
   overflow-y: auto;
+  border: 1px solid #eee; /* Add border */
+  border-radius: 4px;
 }
 #task-history-items li {
   font-size: 0.9em;
-  margin-bottom: 5px;
+  margin-bottom: 0; /* Remove margin */
   color: #555;
+  padding: 8px 10px; /* Add padding */
+  border-bottom: 1px solid #eee; /* Separator */
+}
+#task-history-items li:last-child {
+  border-bottom: none; /* No border on last item */
 }
 #task-history-items strong {
   color: #333;
@@ -372,7 +441,8 @@ body {
 }
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  /* Start with 1 column, adjust later */
+  grid-template-columns: 1fr;
   gap: 20px;
 }
 .dashboard-item {
@@ -381,7 +451,7 @@ body {
   border-radius: 6px;
   border: 1px solid #e8e8e8;
   display: flex;
-  flex-direction: column; /* Ensure content stacks vertically */
+  flex-direction: column;
 }
 .dashboard-item h3 {
   margin-bottom: 10px;
@@ -406,11 +476,15 @@ body {
 }
 .chart-container {
   position: relative;
-  min-height: 250px; /* Ensure space for the chart */
+  min-height: 250px;
+  /* Ensure chart has space */
+  height: 300px; /* Explicit height */
+  max-height: 40vh; /* Limit relative height */
 }
 #focus-chart {
-  max-width: 100%; /* Ensure chart resizes */
-  max-height: 300px; /* Limit chart height */
+  display: block; /* Fix potential inline issues */
+  max-width: 100%;
+  max-height: 100%; /* Respect container */
 }
 .weekly-summary label {
   display: block;
@@ -426,6 +500,7 @@ body {
   border-radius: 4px;
   font-size: 0.95em;
   resize: vertical;
+  min-height: 60px;
 }
 .weekly-summary button {
   margin-top: 10px;
@@ -438,6 +513,8 @@ body {
   font-size: 0.9em;
   white-space: pre-wrap;
   border: 1px solid #ddd;
+  max-height: 150px; /* Limit height */
+  overflow-y: auto; /* Allow scroll */
 }
 .export-buttons {
   margin-top: 20px;
@@ -446,7 +523,7 @@ body {
   justify-content: flex-end;
   padding-top: 15px;
   border-top: 1px solid #eee;
-  flex-wrap: wrap; /* Wrap buttons if needed */
+  flex-wrap: wrap;
 }
 
 /* Progress Bars (Optional) */
@@ -468,27 +545,28 @@ body {
 .progress-bar-fill {
   height: 100%;
   background-color: #3498db;
-  border-radius: 8px 0 0 8px; /* Keep rounded corners */
+  border-radius: 8px 0 0 8px;
   transition: width 0.5s ease-out;
   text-align: right;
   color: white;
   font-size: 0.8em;
   line-height: 15px;
   padding-right: 5px;
+  white-space: nowrap;
 }
 
 /* Task History List in Sidebar */
 #task-history-list .task {
-  cursor: default; /* Not draggable */
+  cursor: default;
   background-color: #f9f9f9;
   opacity: 0.8;
-  border-left: 3px solid #bdc3c7; /* Indicate history */
+  border-left: 3px solid #bdc3c7;
 }
 #task-history-list .task::before {
-  display: none; /* Hide priority dot for history */
+  display: none;
 }
 #task-history-list .task .task-actions {
-  display: none; /* Hide actions for history items */
+  display: none;
 }
 
 /* Animation */
@@ -514,63 +592,148 @@ body {
   animation: slideIn 0.3s ease forwards;
 }
 
-/* Responsive Design */
-@media (max-width: 992px) {
-  .dashboard-grid {
-    grid-template-columns: repeat(
-      auto-fit,
-      minmax(250px, 1fr)
-    ); /* Adjust grid for tablets */
-  }
-  .sidebar {
-    width: 240px; /* Slightly smaller sidebar */
-  }
-}
+/* ============================================ */
+/* Responsive Adjustments                     */
+/* ============================================ */
 
-@media (max-width: 768px) {
-  .app-container {
-    flex-direction: column; /* Stack sidebar and main content */
-    height: auto; /* Allow content to determine height */
-    min-height: 100vh;
-  }
+/* Medium Screens / Tablets (Portrait) / Small Laptops */
+@media (min-width: 769px) and (max-width: 1040px) {
   .sidebar {
-    width: 100%; /* Full width */
-    border-right: none;
-    border-bottom: 1px solid #e0e0e0;
-    height: auto; /* Adjust height */
-    max-height: 40vh; /* Limit initial height, allow scrolling */
-    overflow-y: auto;
+    width: 230px; /* Narrower sidebar */
   }
   .main-content {
     padding: 15px; /* Reduce padding */
   }
-  .scheduler-controls {
-    flex-direction: column; /* Stack controls vertically */
-    align-items: stretch; /* Make buttons full width */
+  .dashboard-grid {
+    /* Ensure at least 2 columns if possible, adjust minmax */
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 15px; /* Reduce gap */
   }
+  #current-date-display {
+    font-size: 1.2em; /* Slightly smaller date */
+  }
+  .btn {
+    font-size: 0.95em; /* Slightly smaller buttons */
+    padding: 8px 12px;
+  }
+}
+
+/* Mobile Screens (Phones) */
+@media (max-width: 768px) {
+  html,
+  body {
+    font-size: 15px; /* Adjust base font */
+    /* Ensure hidden overflow */
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .app-container {
+    flex-direction: column; /* Stack layout */
+    height: 100%; /* Fill viewport */
+    overflow: hidden; /* Container does not scroll */
+  }
+
+  .sidebar {
+    width: 100%; /* Full width */
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    /* Allow natural height up to a limit, then scroll */
+    height: auto;
+    max-height: 40vh; /* Limit height (adjust percentage if needed) */
+    overflow-y: auto; /* CRITICAL: Allow sidebar scroll */
+    flex-shrink: 0; /* CRITICAL: Prevent sidebar collapse */
+    padding: 12px 15px; /* Mobile padding */
+  }
+  /* Ensure sections stack normally */
+  .sidebar-section {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+  }
+  .sidebar-section:first-of-type {
+    margin-top: 0;
+    border-top: none;
+  }
+
+  .main-content {
+    flex-grow: 1; /* CRITICAL: Take remaining space */
+    overflow-y: auto; /* CRITICAL: Allow main content scroll */
+    min-height: 0; /* CRITICAL: Flexbox scroll fix */
+    padding: 15px;
+    width: 100%; /* Ensure full width */
+    gap: 15px; /* Reduce gap */
+  }
+
+  .card {
+    padding: 15px;
+  } /* Adjust card padding */
+
+  .scheduler-controls {
+    flex-direction: column; /* Stack controls */
+    align-items: stretch; /* Full width */
+    gap: 8px; /* Reduce gap */
+  }
+  .scheduler-controls .btn {
+    width: 100%;
+  } /* Full width buttons */
   #current-date-display {
     text-align: center;
     margin: 10px 0;
+    font-size: 1.2em;
   }
+
+  .timeline,
+  .task-list {
+    padding: 10px;
+    min-height: 100px;
+  }
+
+  .task {
+    padding: 12px 12px 12px 25px; /* Adjusted padding */
+    margin-bottom: 8px; /* Reduce margin */
+  }
+  .task::before {
+    left: 8px;
+    top: 15px;
+    width: 10px;
+    height: 10px;
+  } /* Adjust dot */
+
   .modal-content {
     width: 95%;
-    margin: 10% auto; /* Adjust margin for smaller screens */
-    padding: 20px;
+    margin: 3vh auto; /* Vertical margin using vh */
+    padding: 15px;
+    max-height: 94vh; /* Slightly more height */
   }
+  .close-btn {
+    top: 8px;
+    right: 12px;
+  }
+
   .priority-matrix {
-    grid-template-columns: 1fr; /* Stack priority options */
-  }
+    grid-template-columns: 1fr;
+  } /* Stack priorities */
+
   .dashboard-grid {
-    grid-template-columns: 1fr; /* Single column layout */
-  }
+    grid-template-columns: 1fr;
+    gap: 15px;
+  } /* Single column */
+
   .export-buttons,
   .modal-buttons {
     justify-content: center; /* Center buttons */
   }
-  .task::before {
-    left: 5px; /* Adjust priority dot position */
+  .modal-buttons .btn,
+  .export-buttons .btn {
+    flex-grow: 1; /* Allow buttons to grow */
+    max-width: 180px; /* Limit button width */
+    font-size: 0.9em;
   }
-  .task {
-    padding-left: 20px; /* Make space for the dot */
+
+  .chart-container {
+    min-height: 240px;
+    height: 280px;
+    max-height: 40vh;
   }
 }
