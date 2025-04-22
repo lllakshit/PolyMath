@@ -1,14 +1,3 @@
-// First, let's analyze the issues in the original code
-console.log("Analyzing script.js issues...");
-
-// Issues identified:
-// 1. formatDate function has inconsistent handling of date objects
-// 2. currentDateDisplay and timelineDateSpan not properly synchronized
-// 3. Date validation could be improved
-// 4. Some date-related functionality might not be working correctly
-
-// Here's the refactored script.js file:
-
 document.addEventListener("DOMContentLoaded", () => {
   // --- DOM Elements ---
   const appContainer = document.querySelector(".app-container"); // Main container
