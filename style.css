@@ -588,7 +588,19 @@ body {
   }
 
   .sidebar {
-    width: 100%; /* Full width on mobile */
+    width: 240px; /* Slightly smaller sidebar */
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column; /* Stack sidebar and main content */
+    height: auto; /* Allow content to determine height */
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: 100%; /* Full width */
     border-right: none;
     border-bottom: 1px solid #e0e0e0;
     height: auto; /* Adjust height */
