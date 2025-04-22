@@ -1073,7 +1073,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Event Listeners Setup ---
-  // --- Event Listeners Setup ---
   function setupEventListeners() {
     createTaskBtn.addEventListener("click", () => openModalForCreate());
     closeModalBtn.addEventListener("click", closeModal);
